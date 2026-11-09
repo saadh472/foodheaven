@@ -183,29 +183,34 @@
     <!-- Main Content -->
     <div class="main-content" id="main-content" role="main" tabindex="-1">
       <div class="profile-container">
+        <h1>Your profile</h1>
+        <section id="profileStatus" class="page-status" data-kind="info" role="status" aria-live="polite">
+          <p id="profileMessage">Loading your profile…</p>
+          <button id="retryProfile" type="button" hidden>Retry</button>
+        </section>
         <div class="profile-box">
           <h4>Name</h4>
-          <p class="empName">John Doe</p>
+          <p class="empName">—</p>
         </div>
         <div class="profile-box">
           <h4>Contact Number</h4>
-          <p class="empContactNo">+1234567890</p>
+          <p class="empContactNo">—</p>
         </div>
         <div class="profile-box">
           <h4>Email</h4>
-          <p class="empEmail">johndoe@example.com</p>
+          <p class="empEmail">—</p>
         </div>
         <div class="profile-box">
           <h4>Address</h4>
-          <p class="empAddress">123, Main Street, Cityville</p>
+          <p class="empAddress">—</p>
         </div>
         <div class="profile-box">
           <h4>Date of Birth</h4>
-          <p class="empDOB">01-Jan-1990</p>
+          <p class="empDOB">—</p>
         </div>
         <div class="profile-box">
           <h4>Manager ID</h4>
-          <p class="empMgrId">MGR12345</p>
+          <p class="empMgrId">—</p>
         </div>
         <a
           href="../interface.html"
@@ -215,14 +220,59 @@
       </div>
     </div>
     <script>
-(async () => {
-  try {
-    const response = await fetch('/manager/details/'); const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Profile unavailable');
-    const profile = result.details?.[0] || {};
-    const fields = { empName: 'EmployeeName', empContactNo: 'Contact', empEmail: 'EmailID', empAddress: 'Address', empDOB: 'DateOfBirth', empMgrId: 'MgrID' };
-    for (const [selector, field] of Object.entries(fields)) document.querySelector('.' + selector).textContent = profile[field] ?? 'Not provided';
-  } catch (error) { alert(error.message); }
+(() => {
+  let sequence = 0, controller = null, hasSnapshot = false;
+  const fields = { empName: 'EmployeeName', empContactNo: 'Contact', empEmail: 'EmailID', empAddress: 'Address', empDOB: 'DateOfBirth', empMgrId: 'MgrID' };
+  const retry = document.getElementById('retryProfile');
+  async function loadManagerProfile() {
+    sequence += 1;
+    const current = sequence;
+    controller?.abort();
+    controller = new AbortController();
+    const status = document.getElementById('profileStatus');
+    const message = document.getElementById('profileMessage');
+    document.querySelector('.profile-container').setAttribute('aria-busy', 'true');
+    message.textContent = hasSnapshot ? 'Refreshing your profile…' : 'Loading your profile…';
+    status.dataset.kind = 'info';
+    retry.disabled = true;
+    try {
+      const response = await fetch('/manager/details/', { signal: controller.signal });
+      const result = await response.json();
+      if (current !== sequence) return false;
+      if (!response.ok) throw new Error(result.error || 'Your profile is unavailable.');
+      const profile = result.details?.[0];
+      if (!profile || !Number.isInteger(Number(profile.MgrID)) || Number(profile.MgrID) < 1 || typeof profile.EmployeeName !== 'string') throw new Error('The server returned an unexpected profile format.');
+      for (const field of Object.values(fields)) {
+        if (profile[field] != null && !['string', 'number'].includes(typeof profile[field])) throw new Error('The server returned an unexpected profile field.');
+      }
+      for (const [selector, field] of Object.entries(fields)) document.querySelector('.' + selector).textContent = profile[field] == null || profile[field] === '' ? 'Not provided' : profile[field];
+      hasSnapshot = true;
+      message.textContent = 'Your signed-in manager profile is up to date.';
+      status.dataset.kind = 'success';
+      retry.hidden = true;
+      retry.style.display = 'none';
+      status.setAttribute('role', 'status');
+      return true;
+    } catch (error) {
+      if (current !== sequence) return false;
+      message.textContent = (error.message || 'Your profile could not be loaded.') + (hasSnapshot ? ' Showing the last confirmed profile.' : ' Retry to load your profile.');
+      status.dataset.kind = 'error';
+      status.setAttribute('role', 'alert');
+      retry.hidden = false;
+      retry.style.display = '';
+      return false;
+    } finally {
+      if (current === sequence) {
+        controller = null;
+        retry.disabled = false;
+        document.querySelector('.profile-container').setAttribute('aria-busy', 'false');
+      }
+    }
+  }
+  retry.addEventListener('click', loadManagerProfile);
+  window.addEventListener('foodheaven:connection-restored', loadManagerProfile);
+  window.loadManagerProfile = loadManagerProfile;
+  loadManagerProfile();
 })();
 </script>
   </body>

@@ -276,8 +276,14 @@
         <p>Comprehensive insights into your workforce data</p>
       </div>
 
+      <section id="analyticsStatus" class="page-status" data-kind="info" role="status" aria-live="polite">
+        <p id="analyticsMessage">Loading workforce summaries…</p>
+        <button id="refreshAnalytics" type="button">Refresh</button>
+        <button id="retryAnalytics" type="button" hidden>Retry</button>
+      </section>
+
       <!-- Statistics Cards -->
-      <div class="stats-grid" id="statsGrid">
+      <div class="stats-grid" id="statsGrid" aria-busy="true">
         <div class="stat-card">
           <div class="stat-icon">👥</div>
           <div class="stat-value" id="totalEmployees">-</div>
@@ -291,11 +297,12 @@
         <div class="stat-card">
           <div class="stat-icon">📊</div>
           <div class="stat-value" id="shiftsCount">-</div>
-          <div class="stat-label">Active Shifts</div>
+          <div class="stat-label">Assigned Shifts</div>
         </div>
       </div>
 
       <!-- Charts Grid -->
+      <p id="chartStatus" class="page-status" data-kind="warning" role="status" hidden></p>
       <div class="charts-grid">
         <div class="chart-container">
           <h3>Payroll Distribution</h3>
@@ -315,170 +322,8 @@
     </div>
 
     <!-- Theme Toggle -->
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
+    <button class="theme-toggle" title="Toggle Dark Mode">🌙</button>
 
-    <script>
-      let payrollChart, shiftChart;
-
-      // Load all data
-      async function loadAnalyticsData() {
-        try {
-          // Load employees
-          const empResponse = await fetch('/employees/get/');
-          if (!empResponse.ok) throw new Error('Employee data unavailable');
-          const employees = await empResponse.json();
-
-          // Load payroll
-          const payrollResponse = await fetch('/payroll/get/');
-          if (!payrollResponse.ok) throw new Error('Payroll data unavailable');
-          const payroll = await payrollResponse.json();
-
-          // Load shifts
-          const shiftResponse = await fetch('/shift/get/');
-          if (!shiftResponse.ok) throw new Error('Shift data unavailable');
-          const shifts = await shiftResponse.json();
-
-          // Update statistics
-          updateStatistics(employees, payroll, shifts);
-
-          // Create charts
-          createCharts(employees, payroll, shifts);
-        } catch (error) {
-          console.error('Error loading analytics data:', error);
-          document.querySelector('.container').innerHTML +=
-            '<div class="loading">Error loading data. Please refresh the page.</div>';
-        }
-      }
-
-      function updateStatistics(employees, payroll, shifts) {
-        document.getElementById('totalEmployees').textContent = employees.length || 0;
-
-        const totalPayroll = payroll.reduce((sum, p) => sum + (parseFloat(p.Salary) || 0), 0);
-        document.getElementById('totalPayroll').textContent = 'PKR ' + totalPayroll.toLocaleString('en-PK');
-
-        const activeShifts = shifts.filter(s => s.ShiftName && s.ShiftName !== 'Not Assigned').length;
-        document.getElementById('shiftsCount').textContent = activeShifts || 0;
-      }
-
-      function createCharts(employees, payroll, shifts) {
-        if (typeof Chart === 'undefined') {
-          const message = document.createElement('p');
-          message.className = 'loading';
-          message.textContent = 'Charts are unavailable offline. The summaries above still show your data.';
-          document.querySelector('.container').appendChild(message);
-          return;
-        }
-        if (Chart.defaults) {
-          const theme = getComputedStyle(document.body);
-          Chart.defaults.color = theme.getPropertyValue('--muted').trim() || '#536970';
-          Chart.defaults.borderColor = theme.getPropertyValue('--line').trim() || '#dbe4e6';
-        }
-        // Payroll Distribution Chart (Line Chart)
-        const payrollCtx = document.getElementById('payrollChart').getContext('2d');
-        payrollChart = new Chart(payrollCtx, {
-          type: 'line',
-          data: {
-            labels: payroll.slice(0, 10).map(p => {
-              const emp = employees.find(e => e.EmployeeID === p.EmployeeID);
-              return emp ? emp.EmployeeName : `Emp ${p.EmployeeID}`;
-            }),
-            datasets: [{
-              label: 'Salary (PKR)',
-              data: payroll.slice(0, 10).map(p => parseFloat(p.Salary) || 0),
-              borderColor: 'rgba(76, 175, 80, 1)',
-              backgroundColor: 'rgba(76, 175, 80, 0.2)',
-              tension: 0.4,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                display: true
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  callback: function(value) {
-                    return 'PKR ' + value.toLocaleString('en-PK');
-                  }
-                }
-              }
-            }
-          }
-        });
-
-        // Shift Chart (Pie Chart)
-        const shiftCtx = document.getElementById('shiftChart').getContext('2d');
-        const shiftTypes = {};
-        shifts.forEach(s => {
-          const shiftName = s.ShiftName && s.ShiftName !== 'Not Assigned' ? s.ShiftName : 'Not Assigned';
-          shiftTypes[shiftName] = (shiftTypes[shiftName] || 0) + 1;
-        });
-
-        shiftChart = new Chart(shiftCtx, {
-          type: 'pie',
-          data: {
-            labels: Object.keys(shiftTypes),
-            datasets: [{
-              data: Object.values(shiftTypes),
-              backgroundColor: [
-                'rgba(2, 136, 209, 0.8)',
-                'rgba(76, 175, 80, 0.8)',
-                'rgba(255, 152, 0, 0.8)',
-                'rgba(156, 39, 176, 0.8)',
-                'rgba(244, 67, 54, 0.8)'
-              ],
-              borderWidth: 2,
-              borderColor: '#fff'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                position: 'bottom'
-              }
-            }
-          }
-        });
-      }
-
-      // Theme management
-      function toggleTheme() {
-        document.body.classList.toggle('dark-theme');
-        const themeBtn = document.querySelector('.theme-toggle');
-        if (themeBtn) {
-          themeBtn.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
-        }
-        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-      }
-
-      // Load saved theme on page load
-      function loadTheme() {
-        if (localStorage.getItem('theme') === 'dark') {
-          document.body.classList.add('dark-theme');
-          const themeBtn = document.querySelector('.theme-toggle');
-          if (themeBtn) {
-            themeBtn.textContent = '☀️';
-          }
-        }
-      }
-
-      // Load theme when DOM is ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadTheme);
-      } else {
-        loadTheme();
-      }
-
-      // Load data on page load
-      window.onload = loadAnalyticsData;
-    </script>
+    <script src="/Sidebar/analytics.js" defer></script>
   </body>
 </html>

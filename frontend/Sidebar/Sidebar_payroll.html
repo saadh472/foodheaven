@@ -448,6 +448,8 @@
 
     <div class="container" id="main-content" role="main" tabindex="-1">
       <h1>Payroll</h1>
+      <p id="payrollStatus" class="page-status" role="status" aria-live="polite" tabindex="-1"></p>
+      <div class="page-actions"><button type="button" id="refreshPayroll" onclick="fetchPayroll()">Refresh payroll</button><button type="button" id="retryPayroll" onclick="fetchPayroll()" hidden>Retry loading payroll</button></div>
 
       <!-- Employee Search and Table -->
       <div class="search-container">
@@ -484,7 +486,7 @@
       </div>
 
       <!-- Salary Modification Form -->
-      <div id="salaryFormContainer" style="display: none">
+      <form id="salaryFormContainer" style="display: none" novalidate aria-describedby="salaryMessage">
         <h2 class="center-text">Modify Salary</h2>
         <div class="form-group">
           <label for="empName">Employee Name</label>
@@ -510,7 +512,7 @@
           <label for="increaseSalary">Increase Salary (PKR)</label>
           <input
             type="number"
-            id="increaseSalary"
+            id="increaseSalary" min="0.01" max="100000" step="0.01" aria-describedby="salaryMessage"
             placeholder="Enter increase amount in PKR"
             oninput="checkSalaryLimit()"
             disabled
@@ -532,7 +534,7 @@
           <label for="decreaseSalary">Decrease Salary (PKR)</label>
           <input
             type="number"
-            id="decreaseSalary"
+            id="decreaseSalary" min="0.01" max="100000" step="0.01" aria-describedby="salaryMessage"
             placeholder="Enter decrease amount in PKR"
             oninput="checkDecreaseSalary()"
             disabled
@@ -542,311 +544,13 @@
           </div>
         </div>
 
-        <button class="updateSalary" onclick="updateSalary()">
-          Update Salary
-        </button>
-      </div>
+        <p id="salaryMessage" class="page-status" role="status" aria-live="polite" tabindex="-1"></p>
+        <button type="submit" class="updateSalary" id="saveSalary">Update Salary</button>
+        <button type="button" id="cancelSalary">Cancel edit</button>
+      </form>
     </div>
 
-    <script>
-      let payrollData = [];
-      let filteredPayrollData = [];
-      let currentPage = 1;
-      const recordsPerPage = 10;
-      let currentPayrollEmployeeId = -1;
-
-      // Helper function to escape HTML and prevent XSS
-      function escapeHtml(text) {
-        if (text == null) return '';
-        const map = {
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#039;'
-        };
-        return String(text).replace(/[&<>"']/g, m => map[m]);
-      }
-
-      // Helper function to safely get element by ID
-      function getElementSafely(id) {
-        const element = document.getElementById(id);
-        if (!element) {
-          console.error(`Element with ID "${id}" not found`);
-        }
-        return element;
-      }
-
-      // Helper function to format currency with PKR
-      function formatCurrency(amount) {
-        try {
-          if (!amount && amount !== 0) return 'PKR 0';
-          const numAmount = parseFloat(amount);
-          if (isNaN(numAmount)) return 'PKR 0';
-          return 'PKR ' + numAmount.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        } catch (error) {
-          console.error("Error formatting currency:", error);
-          return 'PKR 0';
-        }
-      }
-
-      // Display employee table dynamically
-      function displayPayroll(data) {
-  const tableBody = document.querySelector('#employeeTable tbody'); tableBody.replaceChildren();
-  if (!Array.isArray(data)) data = [];
-  for (const employee of data.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage)) {
-    const row = document.createElement('tr');
-    [employee.EmployeeID, employee.EmployeeName, formatCurrency(employee.Salary)].forEach(value => FoodHeaven.cell(row, value));
-    const actions = FoodHeaven.cell(row, ''); const button = document.createElement('button');
-    button.type = 'button'; button.textContent = 'Modify';
-    button.addEventListener('click', () => { showSalaryForm(employee.EmployeeID); scrollToForm(); });
-    actions.appendChild(button); tableBody.appendChild(row);
-  }
-  const totalPages = Math.ceil(data.length / recordsPerPage);
-  document.getElementById('pageNum').textContent = 'Page ' + (totalPages ? currentPage : 0) + ' of ' + totalPages;
-  document.getElementById('prevPage').disabled = currentPage <= 1;
-  document.getElementById('nextPage').disabled = currentPage >= totalPages;
-}
-
-      async function fetchPayroll() {
-        try {
-          const response = await fetch("/payroll/get/");
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
-            throw new Error(errorData.error || `Failed to fetch payroll: ${response.status}`);
-          }
-          const data = await response.json();
-          if (!Array.isArray(data)) {
-            throw new Error("Invalid data format received from server");
-          }
-          payrollData = data;
-          filteredPayrollData = data;
-          displayPayroll(filteredPayrollData);
-        } catch (error) {
-          console.error("Error fetching payroll:", error);
-          alert("Error fetching payroll data: " + error.message);
-          displayPayroll([]);
-        }
-      }
-
-      window.addEventListener('load', () => {
-        try {
-          fetchPayroll();
-        } catch (error) {
-          console.error("Error on page load:", error);
-        }
-      });
-
-      // Show the salary modification form
-      function showSalaryForm(empId) {
-        const employee = payrollData.find((emp) => emp.EmployeeID == empId);
-        if (employee) {
-          document.getElementById("empName").value = employee.EmployeeName;
-          document.getElementById("currentSalary").value = formatCurrency(employee.Salary);
-          document.getElementById("salaryFormContainer").style.display =
-            "block";
-          currentPayrollEmployeeId = employee.EmployeeID;
-        }
-      }
-
-      // Helper function to extract numeric value from formatted currency string
-      function extractNumericValue(value) {
-        if (typeof value === 'string') {
-          // Remove PKR prefix and commas, then parse
-          return parseFloat(value.replace(/PKR\s*/g, '').replace(/,/g, '')) || 0;
-        }
-        return parseFloat(value) || 0;
-      }
-
-      // Check if the salary increase exceeds the limit
-      function checkSalaryLimit() {
-        const increaseSalary = extractNumericValue(document.getElementById("increaseSalary").value);
-        const currentSalary = extractNumericValue(document.getElementById("currentSalary").value);
-        const maxSalaryLimit = 100000; // Set maximum salary limit
-
-        if (
-          increaseSalary + currentSalary >
-          maxSalaryLimit
-        ) {
-          document.getElementById("increaseWarning").style.display = "block";
-          document.querySelector(".updateSalary").disabled = true;
-        } else {
-          document.getElementById("increaseWarning").style.display = "none";
-          document.querySelector(".updateSalary").disabled = false;
-        }
-      }
-
-      // Check if salary decrease is valid (cannot go below zero)
-      function checkDecreaseSalary() {
-        const decreaseSalary = extractNumericValue(document.getElementById("decreaseSalary").value);
-        const currentSalary = extractNumericValue(document.getElementById("currentSalary").value);
-
-        if (currentSalary - decreaseSalary < 0) {
-          document.getElementById("decreaseWarning").style.display = "block";
-          document.querySelector(".updateSalary").disabled = true;
-        } else {
-          document.getElementById("decreaseWarning").style.display = "none";
-          document.querySelector(".updateSalary").disabled = false;
-        }
-      }
-
-      // Update salary
-      function updateSalary() {
-  const emp = payrollData.find(employee => String(employee.EmployeeID) === String(currentPayrollEmployeeId));
-  if (!emp) { alert('Select an employee first.'); return; }
-  const increase = document.getElementById('increaseCheckbox').checked;
-  const decrease = document.getElementById('decreaseCheckbox').checked;
-  if (increase === decrease) { alert('Choose either Increase or Decrease.'); return; }
-  const input = document.getElementById(increase ? 'increaseSalary' : 'decreaseSalary');
-  const amount = Number(input.value);
-  if (!input.value.trim() || !Number.isFinite(amount) || amount <= 0) { alert('Enter a positive amount.'); return; }
-  const newSalary = Math.round((Number(emp.Salary) + (increase ? amount : -amount)) * 100) / 100;
-  if (!Number.isFinite(newSalary) || newSalary < 0 || newSalary > 100000) { alert('Salary must stay between PKR 0 and PKR 100,000.'); return; }
-  modifyPayroll(emp.EmployeeID, newSalary);
-}
-
-      async function modifyPayroll(employeeId, newSalary) {
-        try {
-          const url = `/payroll/modify/${employeeId}`;
-          const response = await fetch(url, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ Salary: newSalary }),
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            alert(result.message);
-            fetchPayroll();
-            clearForm();
-            scrollToTop();
-          } else {
-            const error = await response.json();
-            alert(error.error || "Failed to update payroll");
-          }
-        } catch (error) {
-          console.error("Error modifying payroll:", error);
-          alert("An error occurred while updating payroll");
-        }
-      }
-
-      function searchEmployee() {
-        const searchQuery = document.getElementById("employeeId").value.trim();
-
-        // If search is empty, show all employees
-        if (!searchQuery) {
-          filteredPayrollData = payrollData;
-          currentPage = 1; // Reset to first page
-          displayPayroll(filteredPayrollData);
-          return;
-        }
-
-        // Case-insensitive search by ID or Name
-        const searchLower = searchQuery.toLowerCase();
-        filteredPayrollData = payrollData.filter((record) => {
-          const empId = record.EmployeeID ? record.EmployeeID.toString().toLowerCase() : '';
-          const empName = record.EmployeeName ? record.EmployeeName.toLowerCase() : '';
-          return empId.includes(searchLower) || empName.includes(searchLower);
-        });
-
-        currentPage = 1; // Reset to first page when searching
-        displayPayroll(filteredPayrollData);
-      }
-
-      function clearSearch() {
-        document.getElementById("employeeId").value = '';
-        filteredPayrollData = payrollData;
-        currentPage = 1;
-        displayPayroll(filteredPayrollData);
-      }
-      function changePage(direction) {
-        try {
-          if (!Array.isArray(filteredPayrollData)) {
-            console.error("filteredPayrollData is not an array");
-            return;
-          }
-
-          const totalPages = Math.max(1, Math.ceil(filteredPayrollData.length / recordsPerPage));
-
-          if (direction === "next" && currentPage < totalPages) {
-            currentPage++;
-          } else if (direction === "prev" && currentPage > 1) {
-            currentPage--;
-          }
-          displayPayroll(filteredPayrollData);
-        } catch (error) {
-          console.error("Error in changePage:", error);
-        }
-      }
-      function toggleInput(action) {
-        const increaseCheckbox = document.getElementById("increaseCheckbox");
-        const decreaseCheckbox = document.getElementById("decreaseCheckbox");
-        const increaseSalary = document.getElementById("increaseSalary");
-        const decreaseSalary = document.getElementById("decreaseSalary");
-
-        if (action === "increase") {
-          increaseSalary.disabled = !increaseCheckbox.checked;
-          if (increaseCheckbox.checked) {
-            decreaseCheckbox.checked = false; // Uncheck the other checkbox
-            decreaseSalary.disabled = true; // Disable the other input
-            decreaseSalary.value = '';
-          }
-        } else if (action === "decrease") {
-          decreaseSalary.disabled = !decreaseCheckbox.checked;
-          if (decreaseCheckbox.checked) {
-            increaseCheckbox.checked = false; // Uncheck the other checkbox
-            increaseSalary.disabled = true; // Disable the other input
-            increaseSalary.value = '';
-          }
-        }
-      }
-      function scrollToTop() {
-        const formContainer = document.querySelector(".container");
-        formContainer.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-      function scrollToForm() {
-        const formContainer = document.querySelector(".form-group");
-        formContainer.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-      function clearForm() {
-        document.getElementById("empName").value = "";
-        document.getElementById("currentSalary").value = "";
-        document.getElementById("increaseCheckbox").checked = false;
-        document.getElementById("decreaseCheckbox").checked = false;
-        document.getElementById("increaseSalary").value = "";
-        document.getElementById("decreaseSalary").value = "";
-      }
-      // Initial load of the employee table
-      window.onload = fetchPayroll();
-
-      // Theme Toggle
-      function toggleTheme() {
-        document.body.classList.toggle('dark-theme');
-        const themeBtn = document.querySelector('.theme-toggle');
-        if (themeBtn) {
-          themeBtn.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
-        }
-        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-      }
-
-      // Load saved theme on page load
-      function loadTheme() {
-        if (localStorage.getItem('theme') === 'dark') {
-          document.body.classList.add('dark-theme');
-          const themeBtn = document.querySelector('.theme-toggle');
-          if (themeBtn) {
-            themeBtn.textContent = '☀️';
-          }
-        }
-      }
-
-      // Load theme when DOM is ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadTheme);
-      } else {
-        loadTheme();
-      }
-    </script>
+    <script src="payroll.js" defer></script>
     <!-- Theme Toggle Button -->
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
   </body>

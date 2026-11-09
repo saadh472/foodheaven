@@ -16,6 +16,7 @@ A full-stack employee management portal built with Flask and JavaScript. Manage 
 - **SQL Server option:** configure an explicit database backend for the original SQL Server workflow.
 - **One application:** relative frontend links and API requests work across ports without a separate frontend server.
 - **Consistent interface:** shared light and dark themes, responsive navigation, readable tables, and keyboard controls.
+- **Recoverable frontend:** explicit loading and retry states, retained snapshots, duplicate-submit prevention, and guarded uncertain writes.
 
 ## Quick start
 
@@ -88,15 +89,16 @@ See the [frontend guide](frontend/README.md) for the screens and shared browser 
 
 ## Verification
 
-Use the virtual environment interpreter from the quick start. Node.js 24 or newer runs the frontend syntax checks.
+Use the virtual environment interpreter from the quick start. Node.js 24 or newer runs the frontend regression checks.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
 .\.venv\Scripts\python.exe -m unittest discover -s frontend/tests -v
-node --check frontend/app.js
+npm ci --prefix frontend --ignore-scripts --no-fund --no-audit
+npm test --prefix frontend
 ```
 
-On macOS or Linux, use `.venv/bin/python`. GitHub Actions runs the checks on Windows and Linux. SQLite integration tests use isolated temporary databases; SQL Server needs a separately configured instance for live verification.
+On macOS or Linux, use `.venv/bin/python`. GitHub Actions runs the checks on Windows and Linux. DOM tests exercise frontend failures, retries, form validation, keyboard behavior, and control sizing. SQLite integration tests use isolated temporary databases; SQL Server needs a separately configured instance for live verification.
 
 ## Scope
 

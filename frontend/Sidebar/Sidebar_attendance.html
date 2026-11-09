@@ -344,7 +344,7 @@
       <script src="/app.js"></script>
       <link rel="stylesheet" href="/styles.css">
   </head>
-  <body class="app-page workspace-page">
+  <body class="app-page workspace-page" data-records="attendance">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <nav class="workspace-nav" aria-label="Workspace navigation"><a class="workspace-brand" href="/interface.html"><img src="/Logo.png" alt="">FoodHeaven</a><div class="workspace-links"><a href="/interface.html">Overview</a><a href="/Sidebar/Sidebar_employeedetails.html">Employees</a><a href="/Sidebar/Sidebar_attendance.html">Attendance</a><a href="/Sidebar/Sidebar_payroll.html">Payroll</a><a href="/Sidebar/Sidebar_shift.html">Shifts</a><a href="/Sidebar/Sidebar_performance.html">Performance</a><a href="/Sidebar/Sidebar_analytics.html">Analytics</a></div></nav>
     <div class="container" id="main-content" role="main" tabindex="-1">
@@ -357,15 +357,23 @@
         <input
           type="text"
           id="employeeId"
+          aria-label="Search attendance by employee ID or name"
           placeholder="Search by Employee ID or Name"
           oninput="searchAttendance()"
         />
         <button onclick="searchAttendance()">Search</button>
         <button onclick="clearSearch()">Clear</button>
+        <button id="refreshRecords" type="button">Refresh</button>
       </div>
 
+      <section id="recordsStatus" class="page-status" data-kind="info" role="status" aria-live="polite">
+        <p id="recordsMessage">Loading attendance records…</p>
+        <button id="retryRecords" type="button" hidden>Retry</button>
+      </section>
+      <p id="recordCount" class="records-count" aria-live="polite">Waiting for records.</p>
+
       <!-- Table to Display Attendance -->
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Attendance table"><table id="attendanceTable">
+      <div class="table-scroll" id="recordsRegion" tabindex="0" role="region" aria-label="Attendance table" aria-busy="true"><table id="attendanceTable">
         <thead>
           <tr>
             <th>Employee ID</th>
@@ -393,217 +401,8 @@
       </a>
     </div>
 
-    <script>
-      let attendanceData = [];
-      let filteredAttendanceData = [];
-      let currentPage = 1;
-      const recordsPerPage = 10;
-
-      // Helper function to escape HTML and prevent XSS
-      function escapeHtml(text) {
-        if (text == null) return '';
-        const map = {
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#039;'
-        };
-        return String(text).replace(/[&<>"']/g, m => map[m]);
-      }
-
-      // Helper function to safely get element by ID
-      function getElementSafely(id) {
-        const element = document.getElementById(id);
-        if (!element) {
-        }
-        return element;
-      }
-
-      // Function to display attendance data
-      function displayAttendance(data) {
-        try {
-          const table = getElementSafely("attendanceTable");
-          if (!table) return;
-
-          const tableBody = table.getElementsByTagName("tbody")[0];
-          if (!tableBody) return;
-
-          tableBody.innerHTML = ""; // Clear existing table rows
-
-          if (!data || !Array.isArray(data) || data.length === 0) {
-            const row = document.createElement("tr");
-            row.innerHTML = `<td colspan="4" style="text-align: center; padding: 20px; color: #666;">No attendance records found</td>`;
-            tableBody.appendChild(row);
-
-            const pageNum = getElementSafely("pageNum");
-            const prevPage = getElementSafely("prevPage");
-            const nextPage = getElementSafely("nextPage");
-
-            if (pageNum) pageNum.innerText = `Page 0 of 0`;
-            if (prevPage) prevPage.disabled = true;
-            if (nextPage) nextPage.disabled = true;
-            return;
-          }
-
-          const startIndex = Math.max(0, (currentPage - 1) * recordsPerPage);
-          const endIndex = Math.min(startIndex + recordsPerPage, data.length);
-          const pageData = data.slice(startIndex, endIndex);
-          const totalPages = Math.max(1, Math.ceil(data.length / recordsPerPage));
-
-          pageData.forEach((row) => {
-            try {
-              const tr = document.createElement("tr");
-              const empId = escapeHtml(row.EmployeeID || row.employeeid || '');
-              const empName = escapeHtml(row.EmployeeName || row.employeename || 'N/A');
-              const attendDate = escapeHtml(row.AttendDate || row.attenddate || 'No Record');
-              const status = escapeHtml(row.Status || row.status || 'No Record');
-
-              tr.innerHTML = `
-                        <td>${empId}</td>
-                        <td>${empName}</td>
-                        <td>${attendDate}</td>
-                        <td>${status}</td>
-                    `;
-              tableBody.appendChild(tr);
-            } catch (err) {
-            }
-          });
-
-          const pageNum = getElementSafely("pageNum");
-          const prevPage = getElementSafely("prevPage");
-          const nextPage = getElementSafely("nextPage");
-
-          if (pageNum) pageNum.innerText = `Page ${currentPage} of ${totalPages}`;
-          if (prevPage) prevPage.disabled = currentPage === 1;
-          if (nextPage) nextPage.disabled = currentPage >= totalPages;
-        } catch (error) {
-        }
-      }
-      async function fetchAttendance() {
-        try {
-          const response = await fetch("/attendance/get/");
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
-            throw new Error(errorData.error || `Failed to fetch attendance: ${response.status}`);
-          }
-          const data = await response.json();
-          if (!Array.isArray(data)) {
-            throw new Error("Invalid data format received from server");
-          }
-          attendanceData = data;
-          filteredAttendanceData = data;
-          displayAttendance(filteredAttendanceData);
-        } catch (error) {
-          alert("Error fetching attendance data: " + error.message);
-          // Display empty state on error
-          displayAttendance([]);
-        }
-      }
-
-      window.addEventListener('load', () => {
-        try {
-          fetchAttendance();
-        } catch (error) {
-        }
-      });
-
-      // Function to search attendance by Employee ID or Name (case-insensitive)
-      function searchAttendance() {
-        try {
-          const searchInput = getElementSafely("employeeId");
-          if (!searchInput) return;
-
-          const searchQuery = searchInput.value.trim();
-
-          // If search is empty, show all records
-          if (!searchQuery) {
-            filteredAttendanceData = attendanceData;
-            currentPage = 1;
-            displayAttendance(filteredAttendanceData);
-            return;
-          }
-
-          // Case-insensitive search by ID or Name
-          const searchLower = searchQuery.toLowerCase();
-          filteredAttendanceData = attendanceData.filter((record) => {
-            try {
-              const empId = record.EmployeeID ? String(record.EmployeeID).toLowerCase() : '';
-              const empName = record.EmployeeName ? String(record.EmployeeName).toLowerCase() : '';
-              return empId.includes(searchLower) || empName.includes(searchLower);
-            } catch (err) {
-              return false;
-            }
-          });
-
-          currentPage = 1; // Reset to first page when searching
-          displayAttendance(filteredAttendanceData);
-        } catch (error) {
-        }
-      }
-
-      function clearSearch() {
-        try {
-          const searchInput = getElementSafely("employeeId");
-          if (searchInput) searchInput.value = '';
-          filteredAttendanceData = attendanceData;
-          currentPage = 1;
-          displayAttendance(filteredAttendanceData);
-        } catch (error) {
-        }
-      }
-
-      function changePage(direction) {
-        try {
-          if (!Array.isArray(filteredAttendanceData)) {
-            console.error("filteredAttendanceData is not an array");
-            return;
-          }
-
-          const totalPages = Math.max(1, Math.ceil(filteredAttendanceData.length / recordsPerPage));
-
-          if (direction === "next" && currentPage < totalPages) {
-            currentPage++;
-          } else if (direction === "prev" && currentPage > 1) {
-            currentPage--;
-          }
-          displayAttendance(filteredAttendanceData);
-        } catch (error) {
-          console.error("Error in changePage:", error);
-        }
-      }
-      // Display all attendance data on initial load
-      //      displayAttendance(attendanceData);
-
-      // Theme Toggle
-      function toggleTheme() {
-        document.body.classList.toggle('dark-theme');
-        const themeBtn = document.querySelector('.theme-toggle');
-        if (themeBtn) {
-          themeBtn.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
-        }
-        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-      }
-
-      // Load saved theme on page load
-      function loadTheme() {
-        if (localStorage.getItem('theme') === 'dark') {
-          document.body.classList.add('dark-theme');
-          const themeBtn = document.querySelector('.theme-toggle');
-          if (themeBtn) {
-            themeBtn.textContent = '☀️';
-          }
-        }
-      }
-
-      // Load theme when DOM is ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadTheme);
-      } else {
-        loadTheme();
-      }
-    </script>
+    <script src="/records.js" defer></script>
     <!-- Theme Toggle Button -->
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
+    <button class="theme-toggle" title="Toggle Dark Mode">🌙</button>
   </body>
 </html>

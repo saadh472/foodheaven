@@ -26,3 +26,5 @@ jobs:
       - run: python -m unittest discover -s backend/tests -v
       - run: python -m unittest discover -s frontend/tests -v
       - run: node --check frontend/app.js
+      - run: npm ci --prefix frontend --ignore-scripts --no-fund --no-audit
+      - run: npm test --prefix frontend

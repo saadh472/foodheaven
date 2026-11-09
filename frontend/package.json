@@ -1,0 +1,11 @@
+{
+  "name": "foodheaven-frontend-checks",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DOM regression checks for the FoodHeaven browser interface",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test tests/test_client.cjs tests/test_directory.cjs tests/test_operations.cjs tests/test_records.cjs tests/test_dashboard.cjs tests/test_login.cjs tests/test_support.cjs"
+  },
+  "devDependencies": { "jsdom": "31.0.0" }
+}

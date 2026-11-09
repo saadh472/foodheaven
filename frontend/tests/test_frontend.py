@@ -12,6 +12,15 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def source_files(pattern):
+    """Keep dependency fixtures and repository metadata out of application checks."""
+    for directory, folders, files in os.walk(ROOT):
+        folders[:] = [name for name in folders if name not in {".git", "node_modules", "__pycache__"}]
+        for name in files:
+            if Path(name).match(pattern):
+                yield Path(directory) / name
+
+
 class PageParser(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -40,7 +49,7 @@ class PageParser(HTMLParser):
 
 class FrontendTests(unittest.TestCase):
     def test_html_and_css_references_resolve_with_exact_case(self):
-        for page in ROOT.rglob("*.html"):
+        for page in source_files("*.html"):
             content = page.read_text(encoding="utf-8-sig")
             self.assertIsNone(re.search(r"(?i)file:///|(?<![a-z])[a-z]:[/\\]", content), page.name)
             parser = PageParser()
@@ -64,8 +73,8 @@ class FrontendTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for JavaScript syntax validation")
     def test_all_javascript_parses(self):
-        sources = [(str(path.relative_to(ROOT)), path.read_text(encoding="utf-8")) for path in ROOT.rglob("*.js")]
-        for page in ROOT.rglob("*.html"):
+        sources = [(str(path.relative_to(ROOT)), path.read_text(encoding="utf-8")) for path in source_files("*.js")]
+        for page in source_files("*.html"):
             parser = PageParser()
             parser.feed(page.read_text(encoding="utf-8-sig"))
             sources.extend((str(page.relative_to(ROOT)), source) for source in parser.scripts)

@@ -730,16 +730,16 @@
       <div class="page-header">
         <h1>Employee directory</h1>
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="scrollToForm(); clearForm();">
+          <button id="addEmployeeButton" class="btn btn-primary" onclick="beginNewEmployee()">
             ➕ Add Employee
           </button>
-          <button class="btn btn-info" onclick="refreshEmployeeData(this)">
+          <button id="refreshButton" class="btn btn-info" onclick="refreshEmployeeData()">
             🔄 Refresh
           </button>
-          <button class="btn btn-success" onclick="exportToCSV()">
+          <button id="exportCsvButton" class="btn btn-success" onclick="exportToCSV()">
             📥 Export CSV
           </button>
-          <button class="btn btn-warning" onclick="exportToExcel()">
+          <button id="exportTsvButton" class="btn btn-warning" onclick="exportToExcel()">
             📊 Export TSV
           </button>
         </div>
@@ -750,6 +750,7 @@
           <input
             type="text"
             id="searchInput"
+            aria-label="Search employees by name or ID"
           class="search-input"
           placeholder="Search by Employee Name or ID..."
             oninput="searchEmployees()"
@@ -760,11 +761,16 @@
       <!-- Statistics Card -->
       <div class="stats-card">
         <h3>Total Employees</h3>
-        <div class="stat-value" id="totalEmployeesStat">0</div>
+        <div class="stat-value" id="totalEmployeesStat">—</div>
       </div>
 
+      <section id="directoryStatus" class="page-status" data-kind="info" role="status" aria-live="polite">
+        <p id="directoryMessage">Loading the employee directory…</p>
+        <button id="retryDirectory" class="btn btn-secondary" type="button" hidden>Retry</button>
+      </section>
+
       <!-- Employee Table -->
-      <div class="table-container">
+      <div class="table-container" id="directoryTableRegion" aria-busy="true">
       <div class="table-scroll" tabindex="0" role="region" aria-label="Employee records table"><table class="employee-table" id="employeeTable">
         <thead>
           <tr>
@@ -794,17 +800,19 @@
       <!-- Add/Edit Employee Form -->
       <div class="form-section" id="formSection">
         <h2 class="form-heading">Add New Employee</h2>
-        <form id="employeeForm">
+        <p id="formStatus" class="page-status" role="status" aria-live="polite" hidden></p>
+        <p id="editHint" class="table-hint" aria-live="polite">Changes are saved only after the server confirms them.</p>
+        <form id="employeeForm" novalidate>
           <div class="form-grid">
             <div class="form-group">
               <label for="empId">Employee ID *</label>
-              <input type="number" id="empId" min="1" step="1" required />
-              <span class="error-message">Employee ID is required</span>
+              <input type="number" id="empId" min="1" max="2147483647" step="1" required aria-describedby="empIdError" />
+              <span class="field-error" id="empIdError" hidden></span>
             </div>
             <div class="form-group">
               <label for="empName">Employee Name *</label>
-              <input type="text" id="empName" required />
-              <span class="error-message">Employee Name is required</span>
+              <input type="text" id="empName" maxlength="120" required aria-describedby="empNameError" />
+              <span class="field-error" id="empNameError" hidden></span>
             </div>
             <div class="form-group">
               <label for="contactNo">Contact Number *</label>
@@ -816,39 +824,41 @@
                   <option value="+91">🇮🇳 +91</option>
                   <option value="+971">🇦🇪 +971</option>
                 </select>
-                <input type="tel" id="contactNo" class="contact-input" placeholder="Enter phone number" required />
+                <input type="tel" id="contactNo" class="contact-input" placeholder="Enter phone number" maxlength="32" required aria-describedby="contactError" />
               </div>
-              <span class="error-message" id="contactError">Please enter a valid phone number</span>
+              <span class="field-error" id="contactError" hidden></span>
             </div>
             <div class="form-group">
               <label for="email">Email Address *</label>
-              <input type="email" id="email" required />
-              <span class="error-message">Valid Email Address is required</span>
+              <input type="email" id="email" maxlength="254" required aria-describedby="emailError" />
+              <span class="field-error" id="emailError" hidden></span>
             </div>
             <div class="form-group full-width">
               <label for="address">Address *</label>
-              <input type="text" id="address" required />
-              <span class="error-message">Address is required</span>
+              <input type="text" id="address" maxlength="250" required aria-describedby="addressError" />
+              <span class="field-error" id="addressError" hidden></span>
             </div>
             <div class="form-group">
               <label for="hireDate">Hire Date *</label>
-              <input type="date" id="hireDate" required />
-              <span class="error-message">Hire Date is required</span>
+              <input type="date" id="hireDate" required aria-describedby="hireDateError" />
+              <span class="field-error" id="hireDateError" hidden></span>
             </div>
             <div class="form-group">
               <label for="dob">Date of Birth *</label>
-              <input type="date" id="dob" required />
-              <span class="error-message">Date of Birth is required</span>
+              <input type="date" id="dob" required aria-describedby="dobError" />
+              <span class="field-error" id="dobError" hidden></span>
             </div>
             <div class="form-group">
               <label for="mgrId">Manager ID</label>
-              <input type="number" id="mgrId" min="1" step="1" />
+              <input type="number" id="mgrId" min="1" max="2147483647" step="1" aria-describedby="mgrIdError" />
+              <span class="field-error" id="mgrIdError" hidden></span>
             </div>
           </div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" id="saveButton">
           Add Employee
         </button>
+            <button type="button" class="btn btn-secondary" id="clearFormButton" onclick="clearForm()">Clear form</button>
           </div>
         </form>
       </div>
@@ -869,431 +879,7 @@
       <div class="loading-spinner"></div>
     </div>
 
-    <script>
-      document.getElementById('employeeForm').addEventListener('submit', event => { event.preventDefault(); saveEmployee(); });
-      // Global Variables
-      let employeeData = [];
-      let editingEmployeeId = null;
-      let filteredEmployeeData = [];
-      let currentPage = 1;
-      const recordsPerPage = 10;
-
-      // Toast Notification System
-      function showToast(message, type = 'info') {
-        const toastContainer = document.getElementById('toastContainer');
-        if (!toastContainer) return;
-
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-
-        const icons = {
-          success: '✓',
-          error: '✕',
-          warning: '⚠',
-          info: 'ℹ'
-        };
-
-        toast.innerHTML = `
-          <span class="toast-icon">${icons[type] || icons.info}</span>
-          <span class="toast-message">${FoodHeaven.escapeHtml(message)}</span>
-          <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-        `;
-
-        toastContainer.appendChild(toast);
-
-        setTimeout(() => {
-          toast.style.animation = 'slideInRight 0.3s ease reverse';
-          setTimeout(() => toast.remove(), 300);
-        }, 3000);
-      }
-
-      // Loading Functions
-      function showLoading() {
-        document.getElementById('loadingOverlay')?.classList.add('active');
-      }
-
-      function hideLoading() {
-        document.getElementById('loadingOverlay')?.classList.remove('active');
-      }
-
-      // Format Date for Display
-      function formatDateDisplay(dateString) {
-        if (!dateString) return 'N/A';
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) return dateString;
-          return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-        } catch (e) {
-          return dateString;
-        }
-      }
-
-      // Format Date for Input
-      function formatDateInput(dateString) {
-        if (!dateString) return '';
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) return '';
-          return date.toISOString().split('T')[0];
-        } catch (e) {
-          return '';
-        }
-      }
-
-      // Update Statistics
-      function updateStatistics() {
-        const total = employeeData.length;
-        document.getElementById('totalEmployeesStat').textContent = total;
-      }
-
-      // Display Employees in Table
-      function displayEmployees(data) {
-  const tableBody = document.getElementById('tableBody');
-  tableBody.replaceChildren();
-  if (!Array.isArray(data) || !data.length) {
-    const row = document.createElement('tr');
-    const cell = FoodHeaven.cell(row, 'No employees found'); cell.colSpan = 8;
-    tableBody.appendChild(row); updatePagination(0); return;
-  }
-  const pageData = data.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage);
-  for (const employee of pageData) {
-    const row = document.createElement('tr');
-    [employee.EmployeeID, employee.EmployeeName, employee.Contact, employee.EmailID, employee.Address,
-      formatDateDisplay(employee.HireDate), formatDateDisplay(employee.DateOfBirth)].forEach(value => FoodHeaven.cell(row, value));
-    const actions = FoodHeaven.cell(row, '');
-    const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'btn-small btn-edit'; edit.textContent = 'Edit';
-    edit.addEventListener('click', () => editEmployee(employee.EmployeeID));
-    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn-small btn-delete'; remove.textContent = 'Delete';
-    remove.addEventListener('click', () => removeEmployee(employee.EmployeeID));
-    actions.append(edit, remove); tableBody.appendChild(row);
-  }
-  updatePagination(Math.ceil(data.length / recordsPerPage));
-}
-
-      // Update Pagination
-      function updatePagination(totalPages) {
-        document.getElementById('pageNum').textContent = `Page ${currentPage} of ${totalPages}`;
-        document.getElementById('prevPage').disabled = currentPage === 1;
-        document.getElementById('nextPage').disabled = currentPage >= totalPages || totalPages === 0;
-      }
-
-      // Fetch Employees
-      async function fetchEmployees() {
-        try {
-          showLoading();
-          const response = await fetch('/employees/get/');
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-
-          const data = await response.json();
-
-          if (!Array.isArray(data)) {
-            throw new Error('Invalid data format');
-          }
-
-          employeeData = data;
-          filteredEmployeeData = data;
-          currentPage = 1;
-          displayEmployees(filteredEmployeeData);
-          updateStatistics();
-          return true;
-        } catch (error) {
-          showToast('Error fetching employees: ' + error.message, 'error');
-          displayEmployees([]);
-          return false;
-        } finally {
-          hideLoading();
-        }
-      }
-
-      // Refresh Employee Data
-      async function refreshEmployeeData(btn) {
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = 'Refreshing...';
-        }
-        try {
-          const success = await fetchEmployees();
-          if (success) showToast('Data refreshed successfully!', 'success');
-        } catch (error) {
-          showToast('Error refreshing data', 'error');
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '🔄 Refresh';
-          }
-        }
-      }
-
-      // Search Employees
-      function searchEmployees() {
-        const searchInput = document.getElementById('searchInput');
-        if (!searchInput) return;
-
-        const query = searchInput.value.trim().toLowerCase();
-
-        if (!query) {
-          filteredEmployeeData = employeeData;
-        } else {
-          filteredEmployeeData = employeeData.filter(emp => {
-            const id = String(emp.EmployeeID || '').toLowerCase();
-            const name = String(emp.EmployeeName || '').toLowerCase();
-            return id.includes(query) || name.includes(query);
-          });
-        }
-
-        currentPage = 1;
-        displayEmployees(filteredEmployeeData);
-      }
-
-      // Clear Search
-      function clearSearch() {
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.value = '';
-        filteredEmployeeData = employeeData;
-        currentPage = 1;
-        displayEmployees(filteredEmployeeData);
-      }
-
-      // Change Page
-      function changePage(direction) {
-        const totalPages = Math.ceil(filteredEmployeeData.length / recordsPerPage);
-
-        if (direction === 'next' && currentPage < totalPages) {
-          currentPage++;
-        } else if (direction === 'prev' && currentPage > 1) {
-          currentPage--;
-        }
-
-        displayEmployees(filteredEmployeeData);
-      }
-
-      // Save Employee (Add/Update)
-      async function saveEmployee() {
-        if (!document.getElementById('employeeForm').reportValidity()) return;
-        const empId = document.getElementById('empId').value.trim();
-        const empName = document.getElementById('empName').value.trim();
-        const contactNo = document.getElementById('contactNo').value.trim();
-        const countryCode = document.getElementById('countryCode').value;
-        const email = document.getElementById('email').value.trim();
-        const address = document.getElementById('address').value.trim();
-        const hireDate = document.getElementById('hireDate').value.trim();
-        const dob = document.getElementById('dob').value.trim();
-        const mgrId = document.getElementById('mgrId').value.trim();
-
-        // Validation
-        if (!empId || !empName || !contactNo || !email || !address || !hireDate || !dob) {
-          showToast('Please fill all required fields', 'error');
-            return;
-          }
-
-          const employee = {
-          EmployeeID: parseInt(empId),
-            EmployeeName: empName,
-          Contact: contactNo.startsWith('+') ? contactNo : `${countryCode} ${contactNo}`,
-            EmailID: email,
-            Address: address,
-            HireDate: hireDate,
-            DateOfBirth: dob,
-          MgrID: mgrId ? parseInt(mgrId) : null
-        };
-
-        const isEdit = editingEmployeeId !== null;
-        if (!isEdit && employeeData.some(employee => String(employee.EmployeeID) === empId)) { showToast('That ID already exists. Choose Edit to update its row.', 'error'); return; }
-        const url = isEdit
-                ? `/employees/update/${empId}`
-          : '/employees/add';
-        const method = isEdit ? 'PUT' : 'POST';
-
-        try {
-          showLoading();
-            const response = await fetch(url, {
-              method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(employee)
-            });
-
-          const result = await response.json();
-
-            if (response.ok) {
-            showToast(`Employee ${isEdit ? 'updated' : 'added'} successfully!`, 'success');
-            await fetchEmployees();
-              clearForm();
-            } else {
-            showToast(result.error || 'Failed to save employee', 'error');
-            }
-          } catch (error) {
-          showToast('Error saving employee: ' + error.message, 'error');
-        } finally {
-          hideLoading();
-        }
-      }
-
-      // Edit Employee
-      function editEmployee(empId) {
-        editingEmployeeId = empId;
-        document.getElementById('empId').readOnly = true;
-        const employee = employeeData.find(e => e.EmployeeID == empId);
-        if (!employee) {
-          showToast('Employee not found', 'error');
-          return;
-        }
-
-        document.getElementById('empId').value = employee.EmployeeID || '';
-        document.getElementById('empName').value = employee.EmployeeName || '';
-        document.getElementById('email').value = employee.EmailID || '';
-        document.getElementById('address').value = employee.Address || '';
-        document.getElementById('hireDate').value = formatDateInput(employee.HireDate);
-        document.getElementById('dob').value = formatDateInput(employee.DateOfBirth);
-        document.getElementById('mgrId').value = employee.MgrID || '';
-
-        // Handle contact number with country code
-        const contact = employee.Contact || '';
-        document.getElementById('contactNo').value = contact;
-        if (contact.startsWith('+')) {
-          const parts = contact.split(' ');
-          if (parts.length > 1) {
-            const code = parts[0];
-            document.getElementById('countryCode').value = code;
-            document.getElementById('contactNo').value = parts.slice(1).join(' ');
-          }
-        } else {
-          document.getElementById('countryCode').value = '+92';
-          document.getElementById('contactNo').value = contact;
-        }
-
-        document.querySelector('.form-heading').textContent = 'Edit Employee';
-        document.getElementById('saveButton').textContent = 'Update Employee';
-        scrollToForm();
-      }
-
-      // Remove Employee
-      async function removeEmployee(empId) {
-        if (!confirm('Are you sure you want to delete this employee?')) {
-          return;
-        }
-
-        try {
-          showLoading();
-          const response = await fetch(`/employees/delete/${empId}`, {
-            method: 'DELETE'
-          });
-
-            if (response.ok) {
-            showToast('Employee deleted successfully!', 'success');
-            await fetchEmployees();
-            } else {
-            showToast('Failed to delete employee', 'error');
-            }
-          } catch (error) {
-          showToast('Error deleting employee: ' + error.message, 'error');
-        } finally {
-          hideLoading();
-        }
-      }
-
-      // Clear Form
-      function clearForm() {
-        editingEmployeeId = null;
-        document.getElementById('empId').readOnly = false;
-        document.getElementById('employeeForm').reset();
-        document.querySelector('.form-heading').textContent = 'Add New Employee';
-        document.getElementById('saveButton').textContent = 'Add Employee';
-      }
-
-      // Scroll to Form
-      function scrollToForm() {
-        document.getElementById('formSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-
-      // Export to CSV
-      function exportToCSV() { exportEmployees(','); }
-
-      // Export TSV
-      function exportToExcel() { exportEmployees('\t'); }
-function exportEmployees(separator) {
-  if (!employeeData.length) { showToast('No records to export', 'warning'); return; }
-  const headers = ['EmployeeID', 'EmployeeName', 'Contact', 'EmailID', 'Address', 'HireDate', 'DateOfBirth', 'MgrID'];
-  const quote = value => {
-    let cell = String(value ?? '');
-    if (/^\s*[=+@-]|^[\t\r\n]/.test(cell)) cell = "'" + cell;
-    return '"' + cell.replace(/"/g, '""') + '"';
-  };
-  const content = [headers, ...employeeData.map(employee => headers.map(key => employee[key]))]
-    .map(row => row.map(quote).join(separator)).join('\r\n');
-  const extension = separator === ',' ? 'csv' : 'tsv';
-  const url = URL.createObjectURL(new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' }));
-  const link = document.createElement('a'); link.href = url; link.download = 'employees.' + extension;
-  document.body.appendChild(link); link.click(); link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  showToast(extension.toUpperCase() + ' exported', 'success');
-}
-
-      // Phone Number Formatting
-      const phoneFormats = {
-        '+92': { placeholder: '0300-1234567', example: '0300-1234567' },
-        '+1': { placeholder: '(123) 456-7890', example: '(123) 456-7890' },
-        '+44': { placeholder: '7123 456789', example: '7123 456789' },
-        '+91': { placeholder: '98765 43210', example: '98765 43210' },
-        '+971': { placeholder: '50 123 4567', example: '50 123 4567' }
-      };
-
-      function setupContactFormatting() {
-        const contactInput = document.getElementById('contactNo');
-        const countrySelect = document.getElementById('countryCode');
-        const contactError = document.getElementById('contactError');
-
-        if (!contactInput || !countrySelect) return;
-
-        countrySelect.addEventListener('change', function() {
-          const format = phoneFormats[this.value];
-          if (format && contactInput) {
-            contactInput.placeholder = format.placeholder;
-          }
-        });
-
-        const initialFormat = phoneFormats[countrySelect.value];
-        if (initialFormat && contactInput) {
-          contactInput.placeholder = initialFormat.placeholder;
-        }
-      }
-
-      // Initialize
-      document.addEventListener('DOMContentLoaded', function() {
-        fetchEmployees();
-        setupContactFormatting();
-      });
-
-      // Theme Toggle
-      function toggleTheme() {
-        document.body.classList.toggle('dark-theme');
-        const themeBtn = document.querySelector('.theme-toggle');
-        if (themeBtn) {
-          themeBtn.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
-        }
-        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-      }
-
-      // Load saved theme on page load
-      function loadTheme() {
-        if (localStorage.getItem('theme') === 'dark') {
-          document.body.classList.add('dark-theme');
-          const themeBtn = document.querySelector('.theme-toggle');
-          if (themeBtn) {
-            themeBtn.textContent = '☀️';
-          }
-        }
-      }
-
-      // Load theme when DOM is ready (after other DOMContentLoaded handlers)
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadTheme);
-      } else {
-        loadTheme();
-      }
-    </script>
+    <script src="/Sidebar/employees.js" defer></script>
     <!-- Theme Toggle Button -->
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
   </body>
