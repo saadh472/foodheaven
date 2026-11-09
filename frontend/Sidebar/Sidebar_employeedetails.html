@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            background-color: #f4f7fb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .main-content {
+            width: 100%;
+            height: 100%;
+            max-width: 100%; /* Full width */
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #0288d1;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .search-container input {
+            padding: 12px 20px;
+            width: 250px;
+            border-radius: 6px;
+            border: 2px solid #0288d1;
+            font-size: 1rem;
+            background-color: #f4f7fb;
+        }
+
+        .search-container button {
+            padding: 12px 20px;
+            margin-left: 10px;
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-container button:hover {
+            background-color: #0277bd;
+        }
+
+        .employee-table {
+            margin-top: 30px;
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .employee-table thead {
+            background-color: #0288d1;
+            color: white;
+        }
+
+        .employee-table th, .employee-table td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        .employee-table tbody tr:hover {
+            background-color: #e1f5fe;
+            cursor: pointer;
+        }
+
+        .employee-table tbody tr td button {
+            padding: 6px 12px;
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        .employee-table tbody tr td button:hover {
+            background-color: #0277bd;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .form-container h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #0288d1;
+        }
+
+        .form-container input {
+            padding: 12px;
+            font-size: 1rem;
+            width: 100%;
+            border: 2px solid #0288d1;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            background-color: #f4f7fb;
+        }
+
+        .form-container button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: none;
+            background-color: #0288d1;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s ease;
+            width: 100%;
+        }
+
+        .form-container button:hover {
+            background-color: #0277bd;
+        }
+
+        .back-btn {
+            background-color: #0288d1;
+            color: white;
+            border: 2px solid #0288d1;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 20px;
+            width: auto;
+            transition: background-color 0.3s ease;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .back-btn:hover {
+            background-color: #fff;
+            color: #0288d1;
+            border-color: #0288d1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Employee Details</h1>
+            <p id="directoryStatus" role="status">Loading employee directory…</p>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search by Employee Name or ID" oninput="searchEmployees()">
+                <button type="button" onclick="searchEmployees()">Search</button>
+            </div>
+        </div>
+
+        <!-- Employee Table -->
+        <table class="employee-table" id="employeeTable">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Employee Name</th>
+                    <th>Contact No</th>
+                    <th>Email ID</th>
+                    <th>Address</th>
+                    <th>Hire Date</th>
+                    <th>Date of Birth</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Add New Employee Form -->
+        <div class="form-container">
+            <h2>Add New Employee</h2>
+            <input type="text" id="empId" placeholder="Employee ID">
+            <input type="text" id="empName" placeholder="Employee Name">
+            <input type="text" id="contactNo" placeholder="Contact Number">
+            <input type="email" id="email" placeholder="Email Address">
+            <input type="text" id="address" placeholder="Employee Address">
+            <input type="date" id="hireDate" placeholder="Hire Date">
+            <input type="date" id="dob" placeholder="Date of Birth">
+            <button id="saveEmployee" type="button" onclick="addEmployee()">Add Employee</button>
+            <button type="button" onclick="clearEmployeeForm()">Clear form</button>
+        </div>
+
+        <!-- Back Button -->
+        <a href="../interface.html">
+            <button class="back-btn">Back to Dashboard</button>
+        </a>
+    </div>
+
+    <script src="employees.js"></script>
+</body>
+</html>

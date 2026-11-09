@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Management - Food Heaven</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f4f7fc;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #0288d1;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar button {
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+
+        .navbar button:hover {
+            background-color: #0277bd;
+        }
+
+        /* Container */
+        .container {
+            margin: 30px auto;
+            max-width: 1200px;
+            width: 90%;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #0288d1;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:disabled {
+            background-color: #f2f2f2;
+        }
+
+        .warning {
+            color: red;
+            font-weight: bold;
+            margin-top: 5px;
+            display: none;
+        }
+
+        button {
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0277bd;
+        }
+
+        /* Table styling */
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #0288d1;
+            color: white;
+        }
+
+        table tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .back-btn {
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .back-btn:hover {
+            background-color: #0277bd;
+        }
+
+        /* Centering the text */
+        .center-text {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span>Food Heaven Payroll Management</span>
+        <a href="../interface.html"><button>Back to Dashboard</button></a>
+    </div>
+
+    <div class="container">
+        <h1>Employee Payroll</h1>
+
+        <!-- Employee Search and Table -->
+        <div class="table-container">
+            <h2 class="center-text">Employee List</h2>
+            <table id="employeeTable">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Current Salary</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be populated here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Salary Modification Form -->
+        <div id="salaryFormContainer" style="display: none;">
+            <h2 class="center-text">Modify Salary</h2>
+            <div class="form-group">
+                <label for="empName">Employee Name</label>
+                <input type="text" id="empName" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="currentSalary">Current Salary</label>
+                <input type="number" id="currentSalary" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="increaseSalary">Increase Salary</label>
+                <input type="number" id="increaseSalary" placeholder="Enter increase amount" oninput="checkSalaryLimit()">
+                <div id="increaseWarning" class="warning">Salary limit exceeded!</div>
+            </div>
+
+            <div class="form-group">
+                <label for="decreaseSalary">Decrease Salary</label>
+                <input type="number" id="decreaseSalary" placeholder="Enter decrease amount" oninput="checkDecreaseSalary()">
+                <div id="decreaseWarning" class="warning">Cannot decrease salary below zero!</div>
+            </div>
+
+            <button onclick="updateSalary()">Update Salary</button>
+        </div>
+    </div>
+
+    <script>
+        // Sample data (replace this with actual data fetching from the database)
+        const employeeData = [
+            { id: 1, name: 'John Doe', salary: 50000 },
+            { id: 2, name: 'Jane Smith', salary: 60000 },
+            { id: 3, name: 'Michael Johnson', salary: 55000 },
+            { id: 4, name: 'Emily Davis', salary: 70000 },
+        ];
+
+        let selectedEmployeeId = null;
+
+        // Display employee table dynamically
+        function loadEmployeeTable() {
+            const tableBody = document.getElementById('employeeTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+            employeeData.forEach(employee => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${employee.id}</td>
+                    <td>${employee.name}</td>
+                    <td>${employee.salary}</td>
+                    <td><button onclick="showSalaryForm(${employee.id})">Modify</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Show the salary modification form
+        function showSalaryForm(empId) {
+            const employee = employeeData.find(emp => emp.id === empId);
+            if (employee) {
+                selectedEmployeeId = employee.id;
+                document.getElementById('empName').value = employee.name;
+                document.getElementById('currentSalary').value = employee.salary;
+                document.getElementById('salaryFormContainer').style.display = 'block';
+            }
+        }
+
+        // Check if the salary increase exceeds the limit
+        function checkSalaryLimit() {
+            const increaseSalary = document.getElementById('increaseSalary').value;
+            const currentSalary = document.getElementById('currentSalary').value;
+            const maxSalaryLimit = 100000; // Set maximum salary limit
+
+            if (parseInt(increaseSalary) + parseInt(currentSalary) > maxSalaryLimit) {
+                document.getElementById('increaseWarning').style.display = 'block';
+            } else {
+                document.getElementById('increaseWarning').style.display = 'none';
+            }
+        }
+
+        // Check if salary decrease is valid (cannot go below zero)
+        function checkDecreaseSalary() {
+            const decreaseSalary = document.getElementById('decreaseSalary').value;
+            const currentSalary = document.getElementById('currentSalary').value;
+
+            if (parseInt(currentSalary) - parseInt(decreaseSalary) < 0) {
+                document.getElementById('decreaseWarning').style.display = 'block';
+            } else {
+                document.getElementById('decreaseWarning').style.display = 'none';
+            }
+        }
+
+        // Update salary
+        function updateSalary() {
+            const employee = employeeData.find(emp => emp.id === selectedEmployeeId);
+            const increase = Number(document.getElementById('increaseSalary').value || 0);
+            const decrease = Number(document.getElementById('decreaseSalary').value || 0);
+            if (!employee) return;
+            const salary = employee.salary + increase - decrease;
+            if (!Number.isFinite(increase) || !Number.isFinite(decrease) || increase < 0 || decrease < 0 || salary < 0 || salary > 100000) {
+                alert('Enter positive adjustments that keep the salary between 0 and 100000.');
+                return;
+            }
+            employee.salary = Math.round(salary * 100) / 100;
+            loadEmployeeTable();
+            document.getElementById('salaryFormContainer').style.display = 'none';
+            alert('Updated in this browser session. Reloading restores the sample salaries.');
+        }
+
+        // Initial load of the employee table
+        window.onload = loadEmployeeTable;
+    </script>
+</body>
+</html>

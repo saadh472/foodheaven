@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Review - Food Heaven</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #e0f7fa; /* Light blue background */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Container for the content */
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header Styling */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0288d1;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #0288d1;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #0288d1;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Back to Dashboard Button Styling */
+        .back-btn {
+            background-color: #0288d1;
+            color: white;
+            border: 2px solid #0288d1;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: auto;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            margin-top: 20px;
+            text-align: center;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .back-btn:hover {
+            background-color: #fff;
+            color: #0288d1;
+            border-color: #0288d1;
+        }
+
+        /* Input Styles for Search */
+        .search-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container input {
+            padding: 12px;
+            font-size: 1rem;
+            width: 60%;
+            border: 2px solid #0288d1;
+            border-radius: 6px;
+            margin-right: 10px;
+        }
+
+        .search-container button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: none;
+            background-color: #0288d1;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-container button:hover {
+            background-color: #0277bd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>View Employee Performance</h1>
+        </div>
+
+        <!-- Search Bar to Filter Performance by Employee ID -->
+        <div class="search-container">
+            <input type="text" id="employeeId" placeholder="Enter Employee ID to search">
+            <button onclick="searchPerformance()">Search</button>
+        </div>
+
+        <!-- Table to Display Performance -->
+        <table id="performanceTable">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Employee Name</th>
+                    <th>Feedback</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated here dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Back to Dashboard Button -->
+        <a href="../interface.html">
+            <button class="back-btn">Back to Dashboard</button>
+        </a>
+    </div>
+
+    <script>
+        // Example Performance Data (for demonstration purposes)
+        const performanceData = [
+            { empId: 'E001', name: 'John Doe', feedback: 'Good performance, needs improvement in communication.' },
+            { empId: 'E002', name: 'Jane Smith', feedback: 'Excellent performance, keep up the good work.' },
+            { empId: 'E003', name: 'Michael Johnson', feedback: 'Needs improvement in punctuality and teamwork.' },
+            { empId: 'E004', name: 'Emily Davis', feedback: 'Great performance, reliable and punctual.' },
+        ];
+
+        // Function to display performance data
+        function displayPerformance(data) {
+            const tableBody = document.getElementById('performanceTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing table rows
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.empId}</td>
+                    <td>${row.name}</td>
+                    <td>${row.feedback}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Function to search performance by Employee ID
+        function searchPerformance() {
+            const empId = document.getElementById('employeeId').value;
+            const filteredData = performanceData.filter(record => record.empId.includes(empId));
+            displayPerformance(filteredData);
+        }
+
+        // Display all performance data on initial load
+        displayPerformance(performanceData);
+    </script>
+
+</body>
+</html>
