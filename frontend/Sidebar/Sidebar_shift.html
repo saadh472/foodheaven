@@ -1,256 +1,1006 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shift Scheduling - Food Heaven</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shift scheduling | FoodHeaven</title>
     <style>
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-color: #f0f4f8;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+      body {
+        margin: 0;
+        font-family: "Roboto", sans-serif;
+        background: linear-gradient(135deg, #e0f7fa 0%, #b3e5fc 100%);
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        min-height: 100vh;
+      }
 
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
+      .container {
+        width: 100%;
+        max-width: 1200px;
+        padding: 40px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.5s ease;
+      }
 
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #0288d1;
-        }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #0288d1;
+      }
 
-        .search-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #0288d1;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
 
-        .search-container input {
-            padding: 12px;
-            font-size: 1rem;
-            width: 60%;
-            border: 2px solid #0288d1;
-            border-radius: 6px;
-            margin-right: 10px;
-        }
+      .header h1::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, #0288d1, #81d4fa);
+        border-radius: 2px;
+      }
 
-        .search-container button {
-            padding: 12px 20px;
-            font-size: 1rem;
-            border: none;
-            background-color: #0288d1;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+      .search-container {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 30px;
+      }
 
-        .search-container button:hover {
-            background-color: #0277bd;
-        }
+      .search-container input {
+        padding: 14px 20px;
+        font-size: 1rem;
+        width: 60%;
+        max-width: 400px;
+        border: 2px solid #0288d1;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #ffffff 0%, #f4f7fb 100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(2, 136, 209, 0.1);
+      }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
+      .search-container input:focus {
+        outline: none;
+        border-color: #81d4fa;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.2);
+        transform: translateY(-2px);
+        background: white;
+      }
 
-        table, th, td {
-            border: 1px solid #0288d1;
-        }
+      .search-container button {
+        padding: 14px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
 
-        th, td {
-            padding: 12px;
-            text-align: center;
-        }
+      .search-container button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s ease, height 0.6s ease;
+      }
 
-        th {
-            background-color: #0288d1;
-            color: white;
-            font-weight: 600;
-        }
+      .search-container button:hover::before {
+        width: 300px;
+        height: 300px;
+      }
 
-        .form-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 30px;
-        }
+      .search-container button:first-of-type:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.4);
+      }
 
-        .form-container input {
-            padding: 12px;
-            font-size: 1rem;
-            width: 180px;
-            border: 2px solid #0288d1;
-            border-radius: 6px;
-        }
+      .search-container button:last-of-type {
+        background: linear-gradient(135deg, #757575, #616161);
+      }
 
-        .form-container button {
-            padding: 12px 20px;
-            font-size: 1rem;
-            border: none;
-            background-color: #0288d1;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+      .search-container button:last-of-type:hover {
+        background: linear-gradient(135deg, #616161, #424242);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(117, 117, 117, 0.4);
+      }
 
-        .form-container button:hover {
-            background-color: #0277bd;
-        }
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 30px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        background: white;
+      }
 
-        .back-btn {
-            background-color: #0288d1;
-            color: white;
-            border: 2px solid #0288d1;
-            padding: 12px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 20px;
-            width: auto;
-            transition: background-color 0.3s ease;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
+      th,
+      td {
+        padding: 16px 12px;
+        text-align: center;
+        border-bottom: 1px solid #e0e0e0;
+      }
 
-        .back-btn:hover {
-            background-color: #fff;
-            color: #0288d1;
-            border-color: #0288d1;
+      th {
+        background: linear-gradient(135deg, #0288d1 0%, #0277bd 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      tbody tr {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      tbody tr:hover {
+        background: linear-gradient(90deg, #e1f5fe 0%, #b3e5fc 100%);
+        transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.15);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .form-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 40px;
+        padding: 30px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-top: 4px solid #0288d1;
+        animation: slideUp 0.5s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .form-container input {
+        padding: 14px 18px;
+        font-size: 1rem;
+        width: 180px;
+        border: 2px solid #0288d1;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #ffffff 0%, #f4f7fb 100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(2, 136, 209, 0.1);
+      }
+
+      .form-container input:focus {
+        outline: none;
+        border-color: #81d4fa;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.2);
+        transform: translateY(-2px);
+        background: white;
+      }
+
+      .form-container button,
+      button {
+        padding: 14px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .form-container button::before,
+      button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s ease, height 0.6s ease;
+      }
+
+      .form-container button:hover::before,
+      button:hover::before {
+        width: 300px;
+        height: 300px;
+      }
+
+      .form-container button:hover,
+      button:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.4);
+      }
+
+      .back-btn {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border: 2px solid #0288d1;
+        padding: 14px 28px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 30px;
+        width: auto;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+      }
+
+      .back-btn:hover {
+        background: white;
+        color: #0288d1;
+        border-color: #0288d1;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.4);
+      }
+
+      .pagination {
+        padding-top: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 20px;
+      }
+
+      .pagination button {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+      }
+
+      .pagination button:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.4);
+      }
+
+      .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      #pageNum {
+        padding: 12px 20px;
+        font-weight: 600;
+        color: #0288d1;
+        font-size: 1.1rem;
+        background: linear-gradient(135deg, #e1f5fe, #b3e5fc);
+        border-radius: 10px;
+        min-width: 120px;
+        text-align: center;
+      }
+
+      /* Dark Mode Styles */
+      body.dark-theme {
+        background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+        color: #e0e0e0;
+      }
+
+      body.dark-theme .container {
+        background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      body.dark-theme .header h1 {
+        color: #81d4fa;
+      }
+
+      body.dark-theme .header h1::after {
+        background: linear-gradient(90deg, #81d4fa, #0288d1);
+      }
+
+      body.dark-theme .search-container input {
+        background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+        color: #e0e0e0;
+        border-color: #0288d1;
+      }
+
+      body.dark-theme .search-container input:focus {
+        background: #2d2d2d;
+        border-color: #81d4fa;
+      }
+
+      body.dark-theme .search-container button {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+      }
+
+      body.dark-theme .search-container button:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+      }
+
+      body.dark-theme #shiftTable {
+        background: #1e1e1e;
+        border: 1px solid #333;
+      }
+
+      body.dark-theme #shiftTable thead {
+        background: linear-gradient(135deg, #0288d1 0%, #0277bd 100%);
+      }
+
+      body.dark-theme #shiftTable tbody tr {
+        background: #2d2d2d;
+        border-bottom: 1px solid #333;
+      }
+
+      body.dark-theme #shiftTable tbody tr:hover {
+        background: #3d3d3d;
+      }
+
+      body.dark-theme #shiftTable td {
+        color: #e0e0e0;
+      }
+
+      body.dark-theme .form-container {
+        background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%) !important;
+        border: 1px solid #333;
+      }
+
+      body.dark-theme .form-container h3 {
+        color: #81d4fa;
+      }
+
+      body.dark-theme .form-container label {
+        color: #e0e0e0;
+      }
+
+      body.dark-theme .form-container input,
+      body.dark-theme .form-container select {
+        background: #1e1e1e;
+        color: #e0e0e0;
+        border-color: #0288d1;
+      }
+
+      body.dark-theme .form-container input:focus,
+      body.dark-theme .form-container select:focus {
+        border-color: #81d4fa;
+      }
+
+      body.dark-theme .pagination button {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+      }
+
+      body.dark-theme .pagination button:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+      }
+
+      body.dark-theme #pageNum {
+        background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+        color: #81d4fa;
+      }
+
+      body.dark-theme .back-btn {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+      }
+
+      body.dark-theme .back-btn:hover {
+        background: white;
+        color: #0288d1;
+      }
+
+      /* Theme Toggle Button */
+      .theme-toggle {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.4);
+        z-index: 999;
+        transition: all 0.3s ease;
+      }
+
+      .theme-toggle:hover {
+        transform: scale(1.1) rotate(180deg);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.6);
+      }
+
+      body.dark-theme .theme-toggle {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.5);
+      }
     </style>
-</head>
-<body>
+      <script src="/app.js"></script>
+      <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body class="app-page workspace-page">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <nav class="workspace-nav" aria-label="Workspace navigation"><a class="workspace-brand" href="/interface.html"><img src="/Logo.png" alt="">FoodHeaven</a><div class="workspace-links"><a href="/interface.html">Overview</a><a href="/Sidebar/Sidebar_employeedetails.html">Employees</a><a href="/Sidebar/Sidebar_attendance.html">Attendance</a><a href="/Sidebar/Sidebar_payroll.html">Payroll</a><a href="/Sidebar/Sidebar_shift.html">Shifts</a><a href="/Sidebar/Sidebar_performance.html">Performance</a><a href="/Sidebar/Sidebar_analytics.html">Analytics</a></div></nav>
+    <div class="container" id="main-content" role="main" tabindex="-1">
+      <div class="header">
+        <h1>Shift scheduling</h1>
+      </div>
 
-    <div class="container">
-        <div class="header">
-            <h1>Shift Scheduling</h1>
+      <!-- Search Bar to Filter Employee by ID or Name -->
+      <div class="search-container">
+        <input
+          type="text"
+          id="employeeName"
+          placeholder="Search by Employee ID or Name"
+          oninput="searchShift()"
+        />
+        <button onclick="searchShift()">Search</button>
+        <button onclick="clearSearch()">Clear</button>
+      </div>
+
+      <!-- Table to Display Employee Shift -->
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Shift table"><table id="shiftTable">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Shift Name</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data will be populated here dynamically -->
+        </tbody>
+      </table></div><p class="table-hint">Scroll horizontally to see all columns.</p>
+      <div class="pagination">
+        <button id="prevPage" onclick="changePage('prev')">Previous</button>
+        <span id="pageNum">Page 1</span>
+        <button id="nextPage" onclick="changePage('next')">Next</button>
+      </div>
+
+      <!-- Form to Change Shift Time -->
+      <!-- <div class="form-container">
+        <input type="text" id="startTime" placeholder="Start Time (HH:MM)" />
+        <input type="text" id="endTime" placeholder="End Time (HH:MM)" />
+        <button onclick="changeShiftTime()">Update Shift</button>
+      </div> -->
+
+      <div
+        class="form-container"
+        style="border-radius: 8px; padding: 1rem; background-color: #fffdfd7e"
+      >
+        <div style="display: flex; flex-direction: column; gap: 0.5rem">
+          <h3 style="text-align: center">Shift Update</h3>
+          <div style="display: flex; flex-direction: column">
+            <label for="currentEmployeeName">Employee Name</label>
+            <input
+              type="text"
+              id="currentEmployeeName"
+              placeholder="Selected Employee Name"
+              readonly
+            />
+          </div>
+          <div style="display: flex; flex-direction: column">
+            <label for="shiftType">Select Shift:</label>
+            <select id="shiftType" style="padding: 12px; font-size: 1rem; border: 2px solid #0288d1; border-radius: 8px;">
+              <option value="">-- Select Shift --</option>
+              <option value="Morning">Morning (9:00 AM - 5:00 PM)</option>
+              <option value="Evening">Evening (5:00 PM - 1:00 AM)</option>
+              <option value="Night">Night (1:00 AM - 9:00 AM)</option>
+            </select>
+          </div>
+          <button onclick="changeShiftTime()">Assign/Update Shift</button>
         </div>
+      </div>
 
-        <!-- Search Bar to Filter Employee by ID -->
-        <div class="search-container">
-            <input type="text" id="employeeId" placeholder="Enter Employee ID to search">
-            <button onclick="searchShift()">Search</button>
-        </div>
-
-        <!-- Table to Display Employee Shift -->
-        <table id="shiftTable">
-            <thead>
-                <tr>
-                    <th>Employee Name</th>
-                    <th>Shift Name</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Data will be populated here dynamically -->
-            </tbody>
-        </table>
-
-        <!-- Form to Change Shift Time -->
-        <div class="form-container">
-            <input type="time" id="startTime" aria-label="Start time">
-            <input type="time" id="endTime" aria-label="End time">
-            <button onclick="changeShiftTime()">Update Shift</button>
-        </div>
-
-        <!-- Back to Dashboard Button -->
-        <a href="../interface.html">
-            <button class="back-btn">Back to Dashboard</button>
-        </a>
+      <!-- Back to Dashboard Button -->
+      <a
+        href="../interface.html"
+      >
+        <button class="back-btn">Back to Dashboard</button>
+      </a>
     </div>
 
     <script>
-        // Example Shift Data (for demonstration purposes)
-        const shiftData = [
-            { empId: 'E001', empName: 'John Doe', shiftName: 'Morning', startTime: '09:00', endTime: '17:00' },
-            { empId: 'E002', empName: 'Jane Smith', shiftName: 'Afternoon', startTime: '14:00', endTime: '22:00' },
-            { empId: 'E003', empName: 'Michael Johnson', shiftName: 'Night', startTime: '22:00', endTime: '06:00' },
-            { empId: 'E004', empName: 'Emily Davis', shiftName: 'Morning', startTime: '08:00', endTime: '16:00' },
-        ];
+      let shiftData = [];
+      let filteredShiftData = [];
+      let currentPage = 1;
+      const recordsPerPage = 10;
+      let currentEmployeeId = -1;
+      let currentEmployeeName = "";
 
-        let currentEmployeeId = ''; // Store the employee ID for which shifts will be updated
+      // Predefined shift times
+      const SHIFT_TIMES = {
+        'Morning': { start: '09:00:00', end: '17:00:00', name: 'Morning' },
+        'Evening': { start: '17:00:00', end: '01:00:00', name: 'Evening' }, // End time is next day
+        'Night': { start: '01:00:00', end: '09:00:00', name: 'Night' }
+      };
 
-        // Function to display shift data
-        function displayShifts(data) {
-            const tableBody = document.getElementById('shiftTable').getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing table rows
+      // Function to create SQL datetime string from shift type
+      function createShiftDateTime(shiftType, isEndTime = false) {
+        if (!SHIFT_TIMES[shiftType]) return null;
 
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.empName}</td>
-                    <td>${row.shiftName}</td>
-                    <td>${row.startTime}</td>
-                    <td>${row.endTime}</td>
-                    <td><button onclick="editShift('${row.empId}')">Edit</button></td>
-                `;
-                tableBody.appendChild(tr);
-            });
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+
+        let time = SHIFT_TIMES[shiftType].start;
+        if (isEndTime) {
+          time = SHIFT_TIMES[shiftType].end;
+          // Only a shift whose end clock time precedes its start crosses midnight
+          if (SHIFT_TIMES[shiftType].end <= SHIFT_TIMES[shiftType].start) {
+            const nextDay = new Date(today);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const nextYear = nextDay.getFullYear();
+            const nextMonth = String(nextDay.getMonth() + 1).padStart(2, '0');
+            const nextDayNum = String(nextDay.getDate()).padStart(2, '0');
+            return `${nextYear}-${nextMonth}-${nextDayNum} ${time}`;
+          }
         }
 
-        // Function to search employee shift by ID
-        function searchShift() {
-            const empId = document.getElementById('employeeId').value.trim().toLowerCase();
-            const filteredData = shiftData.filter(record => record.empId.toLowerCase().includes(empId));
-            if (filteredData.length > 0) {
-                displayShifts(filteredData);
-            } else {
-                alert('Employee ID not found.');
+        return `${year}-${month}-${day} ${time}`;
+      }
+
+      // Helper function to escape HTML and prevent XSS
+      function escapeHtml(text) {
+        if (text == null) return '';
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+      }
+
+      // Helper function to safely get element by ID
+      function getElementSafely(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+        }
+        return element;
+      }
+
+      // Function to display shift data
+      function displayShifts(data) {
+  const tableBody = document.querySelector('#shiftTable tbody'); tableBody.replaceChildren();
+  if (!Array.isArray(data)) data = [];
+  for (const record of data.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage)) {
+    const row = document.createElement('tr');
+    const start = record.StartTime ? convertDateToTime(record.StartTime) : 'No Shift';
+    const end = record.EndTime ? convertDateToTime(record.EndTime) : 'No Shift';
+    const hasShift = Boolean(record.StartTime && record.EndTime);
+    [record.EmployeeName, record.ShiftName || 'Not Assigned', start, end].forEach(value => FoodHeaven.cell(row, value));
+    const actions = FoodHeaven.cell(row, ''); const button = document.createElement('button'); button.type = 'button';
+    button.textContent = hasShift ? 'Edit' : 'Assign Shift';
+    button.addEventListener('click', () => editShift(String(record.EmployeeID), start, end, String(record.EmployeeName || '')));
+    actions.appendChild(button); tableBody.appendChild(row);
+  }
+  const totalPages = Math.ceil(data.length / recordsPerPage);
+  document.getElementById('pageNum').textContent = 'Page ' + (totalPages ? currentPage : 0) + ' of ' + totalPages;
+  document.getElementById('prevPage').disabled = currentPage <= 1;
+  document.getElementById('nextPage').disabled = currentPage >= totalPages;
+}
+      function convertDateToTime(value) {
+  const match = String(value || '').match(/(?:T| |^)([0-2]\d):([0-5]\d)/);
+  if (!match) return 'No Shift';
+  const hour = Number(match[1]);
+  return String(hour % 12 || 12).padStart(2, '0') + ':' + match[2] + (hour >= 12 ? ' PM' : ' AM');
+}
+
+      async function fetchShifts() {
+        try {
+          const response = await fetch("/shift/get/");
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+            throw new Error(errorData.error || `Failed to fetch shifts: ${response.status}`);
+          }
+          const data = await response.json();
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid data format received from server");
+          }
+          shiftData = data;
+          filteredShiftData = data;
+          displayShifts(filteredShiftData);
+        } catch (error) {
+          alert("Error fetching shift data: " + error.message);
+          displayShifts([]);
+        }
+      }
+
+      window.addEventListener('load', () => {
+        try {
+          fetchShifts();
+        } catch (error) {
+        }
+      });
+
+      // Function to search employee shift by ID or Name (case-insensitive)
+      function searchShift() {
+        try {
+          const searchInput = getElementSafely("employeeName");
+          if (!searchInput) return;
+
+          const searchQuery = searchInput.value.trim();
+
+          // If search is empty, show all records
+          if (!searchQuery) {
+            filteredShiftData = shiftData;
+            currentPage = 1;
+            displayShifts(filteredShiftData);
+            return;
+          }
+
+          // Case-insensitive search by ID or Name
+          const searchLower = searchQuery.toLowerCase();
+          filteredShiftData = shiftData.filter((record) => {
+            try {
+              const empId = record.EmployeeID ? String(record.EmployeeID).toLowerCase() : '';
+              const empName = record.EmployeeName ? String(record.EmployeeName).toLowerCase() : '';
+              return empId.includes(searchLower) || empName.includes(searchLower);
+            } catch (err) {
+              return false;
             }
+          });
+
+          currentPage = 1; // Reset to first page when searching
+          displayShifts(filteredShiftData);
+        } catch (error) {
+        }
+      }
+
+      function clearSearch() {
+        try {
+          const searchInput = getElementSafely("employeeName");
+          if (searchInput) searchInput.value = '';
+          filteredShiftData = shiftData;
+          currentPage = 1;
+          displayShifts(filteredShiftData);
+        } catch (error) {
+        }
+      }
+
+      // Function to convert AM/PM time to 24-hour format for comparison
+      function convertTo24Hour(timeStr) {
+        if (!timeStr || timeStr === 'No Shift') return null;
+
+        // Remove AM/PM and extract time
+        const timePart = timeStr.replace(/\s*(AM|PM)/i, '');
+        const [hours, minutes] = timePart.split(':').map(Number);
+        const isPM = /PM/i.test(timeStr);
+
+        if (isNaN(hours) || isNaN(minutes)) return null;
+
+        // Convert to 24-hour format
+        let hours24 = hours;
+        if (isPM && hours !== 12) {
+          hours24 = hours + 12;
+        } else if (!isPM && hours === 12) {
+          hours24 = 0;
         }
 
-        // Function to edit shift time
-        function editShift(employeeId) {
-            const employee = shiftData.find(row => row.empId === employeeId);
-            if (!employee) return;
-            currentEmployeeId = employeeId;
-            document.getElementById('startTime').value = employee.startTime;
-            document.getElementById('endTime').value = employee.endTime;
+        return `${hours24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      }
+
+      // Function to get shift name from times
+      function getShiftNameFromTimes(startTime, endTime) {
+        if (!startTime || !endTime || startTime === 'No Shift' || endTime === 'No Shift') {
+          return null;
         }
 
-        // Function to change shift time
-        function changeShiftTime() {
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
+        // Convert AM/PM times to 24-hour format for comparison
+        const start24 = convertTo24Hour(startTime);
+        const end24 = convertTo24Hour(endTime);
 
-            const employee = shiftData.find(row => row.empId === currentEmployeeId);
-            if (employee && /^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) && /^([01]\d|2[0-3]):[0-5]\d$/.test(endTime)) {
-                employee.startTime = startTime;
-                employee.endTime = endTime;
-                displayShifts(shiftData);
-                alert('Updated in this browser session. Reloading restores the sample shifts.');
-            } else {
-                alert('Select Edit for an employee, then enter valid start and end times.');
-            }
+        if (!start24) return null;
+
+        // Check against predefined shifts
+        for (const [shiftName, shiftData] of Object.entries(SHIFT_TIMES)) {
+          const shiftStart = shiftData.start.substring(0, 5); // Get HH:mm (09:00)
+          const shiftEnd = shiftData.end.substring(0, 5); // Get HH:mm
+
+          // Handle morning shift (9am-5pm = 09:00-17:00)
+          if (shiftName === 'Morning' && start24 === shiftStart && end24 === shiftEnd) {
+            return shiftName;
+          }
+          // Handle evening shift (5pm-1am = 17:00-01:00) - check start time only since end is next day
+          else if (shiftName === 'Evening' && start24 === shiftStart) {
+            return shiftName;
+          }
+          // Handle night shift (1am-9am = 01:00-09:00) - check start time only since end is next day
+          else if (shiftName === 'Night' && start24 === shiftStart) {
+            return shiftName;
+          }
         }
 
-        displayShifts(shiftData);
+        return null; // Unknown shift
+      }
 
+      // Function to edit shift
+      function editShift(empId, startTime, endTime, empName) {
+        try {
+          const currentEmployeeNameEl = getElementSafely("currentEmployeeName");
+          const shiftTypeEl = getElementSafely("shiftType");
+
+          if (!currentEmployeeNameEl) {
+            alert("Form element not found. Please refresh the page.");
+            return;
+          }
+
+          if (!shiftTypeEl) {
+            alert("Shift selection dropdown not found. Please refresh the page.");
+            return;
+          }
+
+          currentEmployeeNameEl.value = String(empName || '');
+          currentEmployeeId = String(empId || '');
+
+          // Determine current shift name from times
+          const currentShiftName = getShiftNameFromTimes(startTime, endTime);
+          if (currentShiftName) {
+            shiftTypeEl.value = currentShiftName;
+          } else {
+            shiftTypeEl.value = ''; // No shift assigned
+          }
+
+          scrollToForm();
+        } catch (error) {
+          alert("Error loading shift data for editing: " + error.message);
+        }
+      }
+
+      function convertTimeStringToInputTagCompatible(timeString) {
+        try {
+          if (!timeString || timeString === 'No Shift') return '';
+          // Extract time from format like "06:00 GMT" or "06:00:00"
+          const timePart = String(timeString).split(" ")[0];
+          // Return in HH:mm format for time input
+          return timePart.substring(0, 5); // Take first 5 chars (HH:mm)
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function convertTimeToSQLDateTime(timeString, sqlString) {
+        // Extract parts from "Mon, 01 Jan 1900 06:00:00 GMT"
+        const parts = sqlString.split(" ");
+        const dayOfMonth = parts[1]; // "01"
+        const month = parts[2]; // "Jan"
+        const year = parts[3]; // "1900"
+
+        // Convert month abbreviation (Jan, Feb, etc.) to numerical month (01, 02, etc.)
+        const monthMap = {
+          Jan: "01",
+          Feb: "02",
+          Mar: "03",
+          Apr: "04",
+          May: "05",
+          Jun: "06",
+          Jul: "07",
+          Aug: "08",
+          Sep: "09",
+          Oct: "10",
+          Nov: "11",
+          Dec: "12",
+        };
+
+        const numericMonth = monthMap[month]; // Get the numeric value of the month
+
+        // Construct the date in the format YYYY-MM-DD
+        const datePart = `${year}-${numericMonth}-${dayOfMonth}`;
+
+        // Construct the final datetime string (append the time with seconds)
+        const formattedDateTime = `${datePart} ${timeString}:00`; // HH:mm:00 format
+
+        return formattedDateTime; // Example: "1900-01-01 06:00:00"
+      }
+
+      // Function to change shift time
+      async function changeShiftTime() {
+        try {
+          if (currentEmployeeId == -1 || !currentEmployeeId) {
+            alert("Select an Employee for Assigning/Updating Shift!");
+            return;
+          }
+
+          const shiftTypeEl = getElementSafely("shiftType");
+
+          if (!shiftTypeEl) {
+            alert("Shift selection not found");
+            return;
+          }
+
+          const shiftType = shiftTypeEl.value.trim();
+
+          if (!shiftType) {
+            alert("Please select a shift type (Morning, Evening, or Night)");
+            return;
+          }
+
+          if (!SHIFT_TIMES[shiftType]) {
+            alert("Invalid shift type selected");
+            return;
+          }
+
+          const emp = shiftData.find((e) => String(e.EmployeeID) === String(currentEmployeeId));
+          if (!emp) {
+            alert("Employee not found");
+            return;
+          }
+
+          // Create datetime strings for the selected shift
+          const finalStartTime = createShiftDateTime(shiftType, false);
+          const finalEndTime = createShiftDateTime(shiftType, true);
+
+          if (!finalStartTime || !finalEndTime) {
+            alert("Error creating shift times");
+            return;
+          }
+
+        // Create the data object to send in the request body
+        const data = {
+          EmployeeID: Number(emp.EmployeeID),
+          StartTime: finalStartTime,
+          EndTime: finalEndTime,
+          ShiftName: shiftType  // Include shift name (Morning, Evening, or Night)
+        };
+
+        try {
+          // Send a PUT request to the Flask API
+          const response = await fetch("/shift/update/", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          // Handle the response from the API
+          if (response.ok) {
+            const result = await response.json();
+            alert(result.message || "Shift updated successfully.");
+            // Optionally, you can reload or refresh the shift data here
+            fetchShifts();
+            clearForm();
+          } else {
+            const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+            alert(errorData.error || "Failed to update shift.");
+          }
+        } catch (error) {
+          alert("An error occurred while updating the shift: " + error.message);
+        }
+        } catch (error) {
+          alert("An error occurred: " + error.message);
+        }
+      }
+      function clearForm() {
+        currentEmployeeId = -1;
+        const currentEmployeeName = document.getElementById("currentEmployeeName");
+        const shiftType = document.getElementById("shiftType");
+        if (currentEmployeeName) currentEmployeeName.value = "";
+        if (shiftType) shiftType.value = "";
+        // Note: startTime and endTime inputs were removed, replaced with shiftType dropdown
+        scrollToTop();
+      }
+      function changePage(direction) {
+        try {
+          if (!Array.isArray(filteredShiftData)) {
+            return;
+          }
+
+          const totalPages = Math.max(1, Math.ceil(filteredShiftData.length / recordsPerPage));
+
+          if (direction === "next" && currentPage < totalPages) {
+            currentPage++;
+          } else if (direction === "prev" && currentPage > 1) {
+            currentPage--;
+          }
+          displayShifts(filteredShiftData);
+        } catch (error) {
+        }
+      }
+      function scrollToTop() {
+        const formContainer = document.querySelector(".container");
+        formContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      function scrollToForm() {
+        const formContainer = document.querySelector(".form-container");
+        if (formContainer) {
+          formContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      // Theme Toggle
+      function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.querySelector('.theme-toggle');
+        if (themeBtn) {
+          themeBtn.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
+        }
+        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+      }
+
+      // Load saved theme on page load
+      function loadTheme() {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.body.classList.add('dark-theme');
+          const themeBtn = document.querySelector('.theme-toggle');
+          if (themeBtn) {
+            themeBtn.textContent = '☀️';
+          }
+        }
+      }
+
+      // Load theme when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadTheme);
+      } else {
+        loadTheme();
+      }
     </script>
-
-</body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
+  </body>
 </html>

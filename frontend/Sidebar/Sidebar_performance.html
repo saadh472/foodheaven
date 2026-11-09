@@ -1,189 +1,650 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Review - Food Heaven</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Performance | FoodHeaven</title>
     <style>
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-color: #e0f7fa; /* Light blue background */
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+      body {
+        margin: 0;
+        font-family: "Roboto", sans-serif;
+        background: linear-gradient(135deg, #e0f7fa 0%, #b3e5fc 100%);
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        min-height: 100vh;
+      }
 
-        /* Container for the content */
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            margin-top: 20px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+      /* Container for the content */
+      .container {
+        width: 100%;
+        max-width: 1200px;
+        margin-top: 20px;
+        padding: 40px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.5s ease;
+      }
 
-        /* Header Styling */
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #0288d1;
-        }
+      /* Header Styling */
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #0288d1;
+      }
 
-        /* Table Styling */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #0288d1;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
 
-        table, th, td {
-            border: 1px solid #0288d1;
-        }
+      .header h1::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, #0288d1, #81d4fa);
+        border-radius: 2px;
+      }
 
-        th, td {
-            padding: 12px;
-            text-align: center;
-        }
+      /* Table Styling */
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        background: white;
+      }
 
-        th {
-            background-color: #0288d1;
-            color: white;
-            font-weight: 600;
-        }
+      th,
+      td {
+        padding: 16px 12px;
+        text-align: center;
+        border-bottom: 1px solid #e0e0e0;
+      }
 
-        /* Back to Dashboard Button Styling */
-        .back-btn {
-            background-color: #0288d1;
-            color: white;
-            border: 2px solid #0288d1;
-            padding: 12px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            width: auto;
-            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-            margin-top: 20px;
-            text-align: center;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
+      th {
+        background: linear-gradient(135deg, #0288d1 0%, #0277bd 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
 
-        .back-btn:hover {
-            background-color: #fff;
-            color: #0288d1;
-            border-color: #0288d1;
-        }
+      tbody tr {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-        /* Input Styles for Search */
-        .search-container {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+      tbody tr:hover {
+        background: linear-gradient(90deg, #e1f5fe 0%, #b3e5fc 100%);
+        transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.15);
+      }
 
-        .search-container input {
-            padding: 12px;
-            font-size: 1rem;
-            width: 60%;
-            border: 2px solid #0288d1;
-            border-radius: 6px;
-            margin-right: 10px;
-        }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
 
-        .search-container button {
-            padding: 12px 20px;
-            font-size: 1rem;
-            border: none;
-            background-color: #0288d1;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+      /* Back to Dashboard Button Styling */
+      .back-btn {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border: 2px solid #0288d1;
+        padding: 14px 28px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        width: auto;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-top: 30px;
+        text-align: center;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+      }
 
-        .search-container button:hover {
-            background-color: #0277bd;
-        }
+      .back-btn:hover {
+        background: white;
+        color: #0288d1;
+        border-color: #0288d1;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.4);
+      }
+
+      /* Input Styles for Search */
+      .search-container {
+        text-align: center;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .search-container input {
+        padding: 14px 20px;
+        font-size: 1rem;
+        width: 60%;
+        max-width: 400px;
+        border: 2px solid #0288d1;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #ffffff 0%, #f4f7fb 100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(2, 136, 209, 0.1);
+      }
+
+      .search-container input:focus {
+        outline: none;
+        border-color: #81d4fa;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.2);
+        transform: translateY(-2px);
+        background: white;
+      }
+
+      .search-container button, button {
+        padding: 14px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .search-container button::before, button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s ease, height 0.6s ease;
+      }
+
+      .search-container button:hover::before, button:hover::before {
+        width: 300px;
+        height: 300px;
+      }
+
+      .search-container button:first-of-type:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.4);
+      }
+
+      .search-container button:last-of-type {
+        background: linear-gradient(135deg, #757575, #616161);
+      }
+
+      .search-container button:last-of-type:hover {
+        background: linear-gradient(135deg, #616161, #424242);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(117, 117, 117, 0.4);
+      }
+
+      .pagination {
+        padding-top: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 20px;
+      }
+
+      .pagination button {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+      }
+
+      .pagination button:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.4);
+      }
+
+      .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      #pageNum {
+        padding: 12px 20px;
+        font-weight: 600;
+        color: #0288d1;
+        font-size: 1.1rem;
+        background: linear-gradient(135deg, #e1f5fe, #b3e5fc);
+        border-radius: 10px;
+        min-width: 120px;
+        text-align: center;
+      }
+
+      /* Dark Mode Styles */
+      body.dark-theme {
+        background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+        color: #e0e0e0;
+      }
+
+      body.dark-theme .container {
+        background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      body.dark-theme .header h1 {
+        color: #81d4fa;
+      }
+
+      body.dark-theme .header h1::after {
+        background: linear-gradient(90deg, #81d4fa, #0288d1);
+      }
+
+      body.dark-theme .search-container input {
+        background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+        color: #e0e0e0;
+        border-color: #0288d1;
+      }
+
+      body.dark-theme .search-container input:focus {
+        background: #2d2d2d;
+        border-color: #81d4fa;
+      }
+
+      body.dark-theme .search-container button {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+      }
+
+      body.dark-theme .search-container button:hover {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+      }
+
+      body.dark-theme table {
+        background: #1e1e1e;
+      }
+
+      body.dark-theme th {
+        background: linear-gradient(135deg, #0288d1 0%, #0277bd 100%);
+      }
+
+      body.dark-theme tbody tr {
+        background: #2d2d2d;
+        border-bottom-color: #333;
+      }
+
+      body.dark-theme tbody tr:hover {
+        background: #3d3d3d;
+      }
+
+      body.dark-theme td {
+        color: #e0e0e0;
+      }
+
+      body.dark-theme .form-container {
+        background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%) !important;
+        border: 1px solid #333;
+      }
+
+      body.dark-theme .form-container label {
+        color: #e0e0e0;
+      }
+
+      body.dark-theme .form-container input {
+        background: #1e1e1e;
+        color: #e0e0e0;
+        border-color: #0288d1;
+      }
+
+      body.dark-theme .form-container input:focus {
+        border-color: #81d4fa;
+      }
+
+      body.dark-theme .pagination button {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+      }
+
+      body.dark-theme .pagination button:hover:not(:disabled) {
+        background: linear-gradient(135deg, #0277bd, #01579b);
+      }
+
+      body.dark-theme #pageNum {
+        background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+        color: #81d4fa;
+      }
+
+      /* Theme Toggle Button */
+      .theme-toggle {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.4);
+        z-index: 999;
+        transition: all 0.3s ease;
+      }
+
+      .theme-toggle:hover {
+        transform: scale(1.1) rotate(180deg);
+        box-shadow: 0 6px 20px rgba(2, 136, 209, 0.6);
+      }
+
+      body.dark-theme .theme-toggle {
+        background: linear-gradient(135deg, #0288d1, #0277bd);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.5);
+      }
     </style>
-</head>
-<body>
+      <script src="/app.js"></script>
+      <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body class="app-page workspace-page">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <nav class="workspace-nav" aria-label="Workspace navigation"><a class="workspace-brand" href="/interface.html"><img src="/Logo.png" alt="">FoodHeaven</a><div class="workspace-links"><a href="/interface.html">Overview</a><a href="/Sidebar/Sidebar_employeedetails.html">Employees</a><a href="/Sidebar/Sidebar_attendance.html">Attendance</a><a href="/Sidebar/Sidebar_payroll.html">Payroll</a><a href="/Sidebar/Sidebar_shift.html">Shifts</a><a href="/Sidebar/Sidebar_performance.html">Performance</a><a href="/Sidebar/Sidebar_analytics.html">Analytics</a></div></nav>
+    <div class="container" id="main-content" role="main" tabindex="-1">
+      <div class="header">
+        <h1>Performance</h1>
+      </div>
 
-    <div class="container">
-        <div class="header">
-            <h1>View Employee Performance</h1>
-        </div>
+      <!-- Search Bar to Filter Performance by Employee ID or Name -->
+      <div class="search-container">
+        <input
+          type="text"
+          id="employeeId"
+          placeholder="Search by Employee ID or Name"
+          oninput="searchPerformance()"
+        />
+        <button onclick="searchPerformance()">Search</button>
+        <button onclick="clearSearch()">Clear</button>
+      </div>
 
-        <!-- Search Bar to Filter Performance by Employee ID -->
-        <div class="search-container">
-            <input type="text" id="employeeId" placeholder="Enter Employee ID to search">
-            <button onclick="searchPerformance()">Search</button>
-        </div>
+      <!-- Table to Display Performance -->
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Performance table"><table id="performanceTable">
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Employee Name</th>
+            <th>Feedback</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data will be populated here dynamically -->
+        </tbody>
+      </table></div><p class="table-hint">Scroll horizontally to see all columns.</p>
 
-        <!-- Table to Display Performance -->
-        <table id="performanceTable">
-            <thead>
-                <tr>
-                    <th>Employee ID</th>
-                    <th>Employee Name</th>
-                    <th>Feedback</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Data will be populated here dynamically -->
-            </tbody>
-        </table>
+      <div class="pagination">
+        <button id="prevPage" onclick="changePage('prev')">Previous</button>
+        <span id="pageNum">Page 1</span>
+        <button id="nextPage" onclick="changePage('next')">Next</button>
+      </div>
 
-        <!-- Back to Dashboard Button -->
-        <a href="../interface.html">
-            <button class="back-btn">Back to Dashboard</button>
-        </a>
+      <!-- Back to Dashboard Button -->
+      <a
+        href="../interface.html"
+      >
+        <button class="back-btn">Back to Dashboard</button>
+      </a>
     </div>
 
     <script>
-        // Example Performance Data (for demonstration purposes)
-        const performanceData = [
-            { empId: 'E001', name: 'John Doe', feedback: 'Good performance, needs improvement in communication.' },
-            { empId: 'E002', name: 'Jane Smith', feedback: 'Excellent performance, keep up the good work.' },
-            { empId: 'E003', name: 'Michael Johnson', feedback: 'Needs improvement in punctuality and teamwork.' },
-            { empId: 'E004', name: 'Emily Davis', feedback: 'Great performance, reliable and punctual.' },
-        ];
+      let performanceData = [];
+      let filteredPerformanceData = [];
+      let currentPage = 1;
+      const recordsPerPage = 10;
 
-        // Function to display performance data
-        function displayPerformance(data) {
-            const tableBody = document.getElementById('performanceTable').getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing table rows
+      // Helper function to escape HTML and prevent XSS
+      function escapeHtml(text) {
+        if (text == null) return '';
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+      }
 
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.empId}</td>
-                    <td>${row.name}</td>
-                    <td>${row.feedback}</td>
-                `;
-                tableBody.appendChild(tr);
-            });
+      // Helper function to safely get element by ID
+      function getElementSafely(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+          console.error(`Element with ID "${id}" not found`);
         }
+        return element;
+      }
 
-        // Function to search performance by Employee ID
-        function searchPerformance() {
-            const empId = document.getElementById('employeeId').value;
-            const filteredData = performanceData.filter(record => record.empId.includes(empId));
-            displayPerformance(filteredData);
+      async function fetchPerformance() {
+        try {
+          const response = await fetch("/performance/get/");
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+            throw new Error(errorData.error || `Failed to fetch performance: ${response.status}`);
+          }
+          const data = await response.json();
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid data format received from server");
+          }
+          performanceData = data;
+          filteredPerformanceData = data;
+          displayPerformance(filteredPerformanceData);
+        } catch (error) {
+          console.error("Error fetching performance:", error);
+          alert("Error fetching performance data: " + error.message);
+          displayPerformance([]);
         }
+      }
 
-        // Display all performance data on initial load
-        displayPerformance(performanceData);
+      window.addEventListener('load', () => {
+        try {
+          fetchPerformance();
+        } catch (error) {
+          console.error("Error on page load:", error);
+        }
+      });
+
+      // Function to display performance data
+      function displayPerformance(data) {
+        try {
+          const table = getElementSafely("performanceTable");
+          if (!table) return;
+
+          const tableBody = table.getElementsByTagName("tbody")[0];
+          if (!tableBody) return;
+
+          tableBody.innerHTML = ""; // Clear existing table rows
+
+          if (!data || !Array.isArray(data) || data.length === 0) {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td colspan="3" style="text-align: center; padding: 20px; color: #666;">No performance records found</td>`;
+            tableBody.appendChild(row);
+
+            const pageNum = getElementSafely("pageNum");
+            const prevPage = getElementSafely("prevPage");
+            const nextPage = getElementSafely("nextPage");
+
+            if (pageNum) pageNum.innerText = `Page 0 of 0`;
+            if (prevPage) prevPage.disabled = true;
+            if (nextPage) nextPage.disabled = true;
+            return;
+          }
+
+          const startIndex = Math.max(0, (currentPage - 1) * recordsPerPage);
+          const endIndex = Math.min(startIndex + recordsPerPage, data.length);
+          const pageData = data.slice(startIndex, endIndex);
+          const totalPages = Math.max(1, Math.ceil(data.length / recordsPerPage));
+
+          pageData.forEach((row) => {
+            try {
+              const tr = document.createElement("tr");
+              const empId = escapeHtml(row.EmployeeID || '');
+              const empName = escapeHtml(row.EmployeeName || 'N/A');
+              const performance = escapeHtml(row.Performance || 'N/A');
+
+              tr.innerHTML = `
+                        <td>${empId}</td>
+                        <td>${empName}</td>
+                        <td>${performance}</td>
+                    `;
+              tableBody.appendChild(tr);
+            } catch (err) {
+              console.error("Error rendering performance row:", err);
+            }
+          });
+
+          const pageNum = getElementSafely("pageNum");
+          const prevPage = getElementSafely("prevPage");
+          const nextPage = getElementSafely("nextPage");
+
+          if (pageNum) pageNum.innerText = `Page ${currentPage} of ${totalPages}`;
+          if (prevPage) prevPage.disabled = currentPage === 1;
+          if (nextPage) nextPage.disabled = currentPage >= totalPages;
+        } catch (error) {
+          console.error("Error in displayPerformance:", error);
+        }
+      }
+
+      // Function to search performance by Employee ID or Name (case-insensitive)
+      function searchPerformance() {
+        try {
+          const searchInput = getElementSafely("employeeId");
+          if (!searchInput) return;
+
+          const searchQuery = searchInput.value.trim();
+
+          // If search is empty, show all records
+          if (!searchQuery) {
+            filteredPerformanceData = performanceData;
+            currentPage = 1;
+            displayPerformance(filteredPerformanceData);
+            return;
+          }
+
+          // Case-insensitive search by ID or Name
+          const searchLower = searchQuery.toLowerCase();
+          filteredPerformanceData = performanceData.filter((record) => {
+            try {
+              const empId = record.EmployeeID ? String(record.EmployeeID).toLowerCase() : '';
+              const empName = record.EmployeeName ? String(record.EmployeeName).toLowerCase() : '';
+              return empId.includes(searchLower) || empName.includes(searchLower);
+            } catch (err) {
+              console.error("Error filtering record:", err);
+              return false;
+            }
+          });
+
+          currentPage = 1; // Reset to first page when searching
+          displayPerformance(filteredPerformanceData);
+        } catch (error) {
+          console.error("Error in searchPerformance:", error);
+        }
+      }
+
+      function clearSearch() {
+        try {
+          const searchInput = getElementSafely("employeeId");
+          if (searchInput) searchInput.value = '';
+          filteredPerformanceData = performanceData;
+          currentPage = 1;
+          displayPerformance(filteredPerformanceData);
+        } catch (error) {
+          console.error("Error in clearSearch:", error);
+        }
+      }
+
+      function changePage(direction) {
+        try {
+          if (!Array.isArray(filteredPerformanceData)) {
+            console.error("filteredPerformanceData is not an array");
+            return;
+          }
+
+          const totalPages = Math.max(1, Math.ceil(filteredPerformanceData.length / recordsPerPage));
+
+          if (direction === "next" && currentPage < totalPages) {
+            currentPage++;
+          } else if (direction === "prev" && currentPage > 1) {
+            currentPage--;
+          }
+          displayPerformance(filteredPerformanceData);
+        } catch (error) {
+          console.error("Error in changePage:", error);
+        }
+      }
+
+      // Theme Toggle
+      function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.querySelector('.theme-toggle');
+        if (themeBtn) {
+          themeBtn.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
+        }
+        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+      }
+
+      // Load saved theme on page load
+      function loadTheme() {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.body.classList.add('dark-theme');
+          const themeBtn = document.querySelector('.theme-toggle');
+          if (themeBtn) {
+            themeBtn.textContent = '☀️';
+          }
+        }
+      }
+
+      // Load theme when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadTheme);
+      } else {
+        loadTheme();
+      }
     </script>
-
-</body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
+  </body>
 </html>

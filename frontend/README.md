@@ -1,38 +1,36 @@
 # FoodHeaven dashboard
 
-The HTML, CSS, and JavaScript interface for [FoodHeaven](../README.md). The Flask application serves this folder directly, so dashboard requests and API requests share the same origin.
+The browser interface for the [FoodHeaven employee portal](../README.md), built with HTML, CSS, and JavaScript. Start [the local launcher](../launcher/Start%20FoodHeaven.cmd) and open its local address. The server hosts the interface and API together.
 
-## Run
+## Sign in
 
-Follow the [root quick start](../README.md#quick-start), then open [http://127.0.0.1:5000/](http://127.0.0.1:5000/). No frontend compilation or npm install is needed.
+The default SQLite demo provides manager login **1001** and password **DemoPass123!**. This account and all seeded employee records are fictional. Changes are saved to the local database.
 
-For a static-only preview, run `python -m http.server 8000 --bind 127.0.0.1 --directory frontend` from the repository root and open [http://127.0.0.1:8000/](http://127.0.0.1:8000/). The relative API request will be unavailable on that static server, so the directory uses sample employees.
+The session uses an HTTP-only cookie. The manager ID in browser storage is only a display hint. API requests use a CSRF token from `/api/session`; credentials and database access remain on the server.
 
-## Screens and behavior
+## Screens
 
-| Path | Purpose |
-| --- | --- |
-| `index.html` | Entry point that opens the dashboard |
-| `interface.html` | Main dashboard and profile panel |
-| `Sidebar/` | Attendance, payroll, performance, shifts, and directory |
-| `Sidebar/employees.js` | Employee fetch, search, and session-only editing |
-| `Canvas/` | Profile and password form previews |
-| `Portal_login/` | Portal and password recovery previews |
-| `tests/test_static_site.py` | Local link and asset checks |
+- **Dashboard:** employee totals, payroll and shift statistics, quick actions, and your profile.
+- **Employee details:** search, pagination, create, edit, delete, and CSV/TSV exports.
+- **Payroll:** apply a validated increase or decrease between PKR 0 and PKR 100,000.
+- **Shift scheduling:** assign morning, evening, or night shifts.
+- **Attendance and performance:** search recorded employee data.
+- **Analytics:** payroll and shift charts. Charts load Chart.js from a CDN; the data summaries remain usable if it is unavailable.
+- **Profile and password:** view the signed-in manager's profile and change a password by verifying the current password.
 
-The employee directory requests `GET /api/employees`. Failed, invalid, or timed-out responses leave the page usable with synthetic employees and a visible explanation. Controls remain disabled while the initial request is pending. API values are rendered with `textContent`.
+Employee values are rendered as text. CSV/TSV exports quote cells and neutralize spreadsheet formula prefixes. Email-only password recovery is disabled. If a local password is lost, retain the existing database; the [backend guide](../backend/README.md) explains how to start a separate clean SQLite demo using a new `SQLITE_PATH`.
 
-Expected fields are `EmployeeID`, `EmployeeName`, `ContactNo`, `EmailID`, `Address`, `HireDate`, and `DateOfBirth`. The backend serializes dates as ISO 8601 values. See the [API contract](../backend/README.md#api-contract).
+The shared [app.js](app.js) supplies same-origin API requests, a request timeout, CSRF headers, session handling, and logout. Pages redirect to sign-in when a session expires. Use the provided server rather than opening HTML files directly.
 
-Directory edits, salary adjustments, and shift changes reset when the page reloads. Attendance and performance use sample data. Login and password screens are form previews. Use fictional information when trying them.
+[styles.css](styles.css) supplies the shared teal palette, light and dark surfaces, consistent controls, and responsive navigation. Tables scroll inside labeled regions on small screens. Dashboard cards are native links; the account drawer supports Escape, focus trapping, and returning focus to its trigger. Visible keyboard focus and reduced-motion preferences are supported.
 
-## Verify
+## Verification
 
-From the repository root:
+From the repository root, run:
 
 ```sh
 python -m unittest discover -s frontend/tests -v
-node --check frontend/Sidebar/employees.js
+node --check frontend/app.js
 ```
 
-The Python check resolves local HTML links, assets, form targets, redirects, and script navigation with exact filename case. It rejects machine-specific filesystem paths.
+These checks resolve local HTML/CSS references with exact filename case and parse all inline and external JavaScript. Node.js must be installed for syntax checks. Interactive workflows also need the running backend.

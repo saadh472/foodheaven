@@ -2,111 +2,104 @@
 
 [![Quality checks](https://github.com/saadh472/foodheaven/actions/workflows/quality.yml/badge.svg)](https://github.com/saadh472/foodheaven/actions/workflows/quality.yml)
 
-An employee portal prototype with a browser dashboard and a Flask API in one repository. Explore attendance, payroll, performance, shift scheduling, and an employee directory. One local server serves both the interface and the API.
+A full-stack employee management portal built with Flask and JavaScript. Manage employees, payroll, and shifts; review attendance, performance, and workforce analytics. The interface and API run together on one local server.
 
-**Stack:** HTML, CSS, JavaScript · Python, Flask · SQL Server, pyodbc
+**Stack:** Python · Flask · SQLite · optional SQL Server · HTML, CSS, JavaScript
 
 ## Features
 
-- **Employee directory:** search records, preview adding and editing employees, and remove rows for the current page session.
-- **SQL Server integration:** load employee records through a read-only API; use clearly labeled sample records when the database is unavailable.
-- **Payroll and shifts:** try salary adjustments and scheduling changes using sample records.
-- **Dashboard navigation:** access attendance, performance, employee details, and profile screens through portable relative links.
-- **Resilient API:** bounded database connections, automatic resource cleanup, ISO date values, and sanitized JSON errors.
-- **Automated checks:** API behavior, database failure handling, static route isolation, local links, and JavaScript syntax.
+- **Employee management:** search, create, edit, and delete employee records with persistent database storage.
+- **Payroll and shifts:** update salary amounts and working schedules with server-side validation.
+- **Attendance and performance:** inspect workforce records and dashboard summaries.
+- **Manager sessions:** signed session cookies, hashed passwords, authenticated API routes, and CSRF protection for changes.
+- **Local demo database:** start with fictional data in SQLite; keep your records between restarts.
+- **SQL Server option:** configure an explicit database backend for the original SQL Server workflow.
+- **One application:** relative frontend links and API requests work across ports without a separate frontend server.
+- **Consistent interface:** shared light and dark themes, responsive navigation, readable tables, and keyboard controls.
 
 ## Quick start
 
-Use Python 3.11 or newer. SQL Server is optional for exploring the sample dashboard. Clone the repository, then run these commands from its root.
+Install Python 3.11 or newer. On Windows, double-click **[launcher/Start FoodHeaven.cmd](launcher/Start%20FoodHeaven.cmd)**. The launcher creates a local virtual environment, installs dependencies, and starts the app. Keep the terminal open while using it.
+
+You can also start it manually from the repository root.
+
+To get a fresh copy, clone [saadh472/foodheaven](https://github.com/saadh472/foodheaven) and open the downloaded folder:
+
+```sh
+git clone https://github.com/saadh472/foodheaven.git
+cd foodheaven
+```
 
 ### Windows PowerShell
 
 ```powershell
-git clone https://github.com/saadh472/foodheaven.git
-cd foodheaven
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe backend/project-backend.py
+.\.venv\Scripts\python.exe backend/app.py
 ```
 
 ### macOS or Linux
 
 ```sh
-git clone https://github.com/saadh472/foodheaven.git
-cd foodheaven
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python backend/project-backend.py
+.venv/bin/python backend/app.py
 ```
 
-Open [the dashboard](http://127.0.0.1:5000/). Stop the server with Ctrl+C. No Node build step or separate frontend server is needed. Google Fonts are optional; the interface has local font fallbacks.
+Open [http://127.0.0.1:5000/](http://127.0.0.1:5000/).
 
-On Linux, pyodbc also requires the system's unixODBC runtime. A compatible Microsoft ODBC driver and a running SQL Server instance are needed only to retrieve database records. See [database setup](backend/README.md#database-setup).
-
-## Explore the portal
-
-1. Open **Employee Details**. The directory requests `/api/employees`; if SQL Server is unavailable, it shows synthetic records and explains the fallback.
-2. Search by employee ID or name. Add a fictional employee, edit it, or remove a row.
-3. Open **Payroll** and apply a sample salary adjustment using **Modify**.
-4. Open **Shift Scheduling** and change a sample employee's working hours.
-
-Directory, payroll, and shift edits are kept in page memory and reset on reload. The API reads SQL Server records; it does not save these edits. Attendance and performance are sample views. Login, password recovery, and profile forms demonstrate navigation and validation with fictional data; they do not implement account authentication.
-
-## Enable SQL Server records
-
-Create a dedicated demo database, run [backend/sql/demo-schema.sql](backend/sql/demo-schema.sql) against it, and set the matching connection variables before starting the server.
-
-```powershell
-$env:DB_SERVER = "localhost\SQLEXPRESS01"
-$env:DB_NAME = "project_database"
-$env:DB_DRIVER = "ODBC Driver 17 for SQL Server"
-.\.venv\Scripts\python.exe backend/project-backend.py
-```
-
-The default connection uses Windows Authentication. [Backend documentation](backend/README.md) covers the schema, driver, other authentication modes, and all settings. [backend/.env.example](backend/.env.example) is a settings reference; the application reads process environment variables directly.
-
-## Routes
-
-| Route | Behavior |
+| Demo login ID | Demo password |
 | --- | --- |
-| `GET /` | Opens the dashboard |
-| `GET /api/health` | Checks database connectivity; returns 503 when unavailable |
-| `GET /api/employees` | Returns the seven employee fields used by the dashboard; returns 503 when unavailable |
-| `GET /employees` | Compatibility alias for the employee endpoint |
+| `1001` | `DemoPass123!` |
 
-The app binds to `127.0.0.1:5000` by default. This coursework prototype is intended for local, fictional-data demonstrations. Authentication, authorization, persistent editing, and production deployment are future work.
+The first SQLite run creates a fictional demo database under `instance/`. Later starts keep the saved data and password changes. Use **Change password** from the signed-in account to update the demo password. Stop the server with Ctrl+C.
+
+If port 5000 is busy, set `$env:API_PORT = "5001"` in PowerShell before starting, then open that port. No Node build step is required. Some visual enhancements use Google Fonts or Chart.js from a CDN.
+
+## Try a complete workflow
+
+1. Sign in with the demo account and inspect the dashboard.
+2. Open **Employee Details**, add a fictional employee, edit the record, then reload to verify persistence.
+3. Update the employee's salary under **Payroll** and schedule under **Shift Scheduling**.
+4. Review **Attendance**, **Performance**, and **Analytics**.
+5. Change the manager password, sign out, and sign back in with the new password.
+
+Changes apply to the selected local database. Input errors leave existing records intact. Database failures are reported as errors rather than silently switching to demo data.
+
+## Database options
+
+SQLite is the default and needs no separate database server. Its database and session key stay in the ignored `instance/` folder.
+
+SQL Server is an explicit opt-in using `DB_BACKEND=sqlserver`, a compatible Microsoft ODBC driver, and a dedicated schema. See the [backend guide](backend/README.md) for setup, environment settings, and API details. The app does not restore or upload database backups.
 
 ## Project layout
 
 ```text
 foodheaven/
-├── frontend/                 # Dashboard, styles, scripts, and assets
-│   ├── interface.html
-│   ├── Sidebar/              # Directory, attendance, payroll, shifts
-│   ├── Canvas/               # Profile and password previews
-│   └── tests/                # Portable links and asset checks
-├── backend/
-│   ├── project-backend.py    # Flask application factory and routes
-│   ├── sql/demo-schema.sql   # Optional SQL Server demo schema
-│   └── tests/                # API and static-serving tests
+├── backend/                  # Flask routes, services, repositories, schema, tests
+├── frontend/                 # Dashboard, portal screens, shared API helper, tests
+├── launcher/                 # CMD launcher and PowerShell startup helper
+│   └── Start FoodHeaven.cmd
 ├── .github/workflows/quality.yml
-└── requirements.txt          # Installs backend dependencies
+└── requirements.txt
 ```
 
-See the [frontend guide](frontend/README.md) and [backend guide](backend/README.md) for component details.
+See the [frontend guide](frontend/README.md) for the screens and shared browser behavior.
 
 ## Verification
 
-Install Node.js 24 or newer for the JavaScript syntax check. From the repository root on Windows:
+Use the virtual environment interpreter from the quick start. Node.js 24 or newer runs the frontend syntax checks.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s backend/tests -v
 .\.venv\Scripts\python.exe -m unittest discover -s frontend/tests -v
-node --check frontend/Sidebar/employees.js
+node --check frontend/app.js
 ```
 
-On macOS or Linux, replace `.\.venv\Scripts\python.exe` with `.venv/bin/python`. The same checks run in GitHub Actions. API tests mock database connections, so they do not require SQL Server. Real database connectivity requires a separately configured instance.
+On macOS or Linux, use `.venv/bin/python`. GitHub Actions runs the checks on Windows and Linux. SQLite integration tests use isolated temporary databases; SQL Server needs a separately configured instance for live verification.
 
-## Project history
+## Scope
 
-This repository consolidates the original FoodHeaven dashboard and API coursework into one application. The earlier `FoodHeaven-UI` and `FoodHeaven-API` repositories retain their original commit history; ongoing development belongs here.
+This is a university project improved for a reproducible local demonstration. It binds to loopback by default. Public hosting would require deployment configuration, HTTPS, account administration, and operational monitoring. Email-based password recovery is disabled until a verified reset-token flow is configured.
+
+The repository combines the original FoodHeaven UI and API work. The former component repositories retain their history; this repository is the home for continued development.
