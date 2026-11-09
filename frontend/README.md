@@ -11,7 +11,7 @@ The session uses an HTTP-only cookie. The manager ID in browser storage is only 
 ## Screens
 
 - **Dashboard:** compact workspace totals, a team-directory preview, shift coverage, workspace tools, and your profile.
-- **Employee details:** search, pagination, create, edit, delete, and CSV/TSV exports.
+- **Employee details:** a compact directory with name/email together, search, pagination, CSV/TSV exports, full employee details, and a focused add/edit panel.
 - **Payroll:** apply a validated increase or decrease between PKR 0 and PKR 100,000.
 - **Shift scheduling:** assign morning, evening, or night shifts.
 - **Attendance and performance:** search recorded employee data.
@@ -25,6 +25,8 @@ The shared [app.js](app.js) supplies same-origin API requests, response timeouts
 Directory, payroll, and shift forms prevent duplicate writes and update their displayed values only after confirmation. If a request's outcome is uncertain, the page keeps the form and requires a fresh read before another attempt. Retry controls reload data; they never silently repeat a write. Confirmed rows remain visible when a refresh fails, with a notice that the snapshot may be stale.
 
 [styles.css](styles.css) supplies shared light and dark surfaces, controls, responsive navigation, and accessible feedback. The overview uses its own [dashboard.css](dashboard.css) and [dashboard.js](dashboard.js), so component-page rules cannot stretch its controls or change its layout. [icons.svg](icons.svg) provides local vector icons. Tables scroll inside labeled regions on small screens; the account drawer supports Escape, focus trapping, and focus restoration.
+
+The employee page reuses the overview's navigation, header, account panel, colors, and theme control through [workspace-shell.js](workspace-shell.js). [directory.css](directory.css) provides its compact table and editor layout. Address, birth date, and manager information remain available in employee details and editing.
 
 ## Verification
 

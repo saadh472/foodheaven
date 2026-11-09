@@ -6,7 +6,8 @@
   const errorIds = { empId: 'empIdError', empName: 'empNameError', contactNo: 'contactError', email: 'emailError', address: 'addressError', hireDate: 'hireDateError', dob: 'dobError', mgrId: 'mgrIdError' };
   const columns = ['EmployeeID', 'EmployeeName', 'Contact', 'EmailID', 'Address', 'HireDate', 'DateOfBirth', 'MgrID'];
   const state = { rows: [], hasSnapshot: false, loading: false, loadFailed: false, sequence: 0, controller: null,
-    writing: false, reconcile: false, editingId: null, editSource: null, editConflict: false, page: 1, baseline: '', initialized: false };
+    writing: false, reconcile: false, editingId: null, editSource: null, editConflict: false, page: 1, baseline: '', initialized: false,
+    drawerOpen: false, drawerMode: null, detailsId: null, returnFocus: null, inertElements: [], managerId: null, hashPending: location.hash === '#employeeForm' };
   const pageSize = 10;
   const byId = id => document.getElementById(id);
   const formValues = () => JSON.stringify(fieldIds.map(id => byId(id).value));
@@ -14,13 +15,14 @@
   const ready = () => state.hasSnapshot && !state.loading && !state.loadFailed && !state.reconcile;
   const matches = row => {
     const query = byId('searchInput').value.trim().toLocaleLowerCase();
-    return !query || String(row.EmployeeID).toLocaleLowerCase().includes(query) || row.EmployeeName.toLocaleLowerCase().includes(query);
+    return !query || String(row.EmployeeID).toLocaleLowerCase().includes(query) || row.EmployeeName.toLocaleLowerCase().includes(query) || String(row.EmailID ?? '').toLocaleLowerCase().includes(query);
   };
 
   function status(message, kind = 'info', retry = false) {
     byId('directoryMessage').textContent = message;
     byId('directoryStatus').dataset.kind = kind;
     byId('directoryStatus').setAttribute('role', kind === 'error' ? 'alert' : 'status');
+    byId('directoryStatus').hidden = kind === 'success' && !retry;
     byId('retryDirectory').hidden = !retry;
     byId('retryDirectory').style.display = retry ? '' : 'none';
   }
@@ -82,6 +84,20 @@
     return element;
   }
 
+  function icon(name) {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    element.setAttribute('class', 'icon');
+    element.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', `/icons.svg#${name}`);
+    element.appendChild(use);
+    return element;
+  }
+
+  function initials(name) {
+    return name.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0]).join('').toLocaleUpperCase();
+  }
+
   function syncControls() {
     const canWrite = ready() && !state.writing;
     for (const control of byId('employeeForm').querySelectorAll('input, select, button')) control.disabled = !canWrite;
@@ -92,13 +108,17 @@
     byId('retryDirectory').disabled = state.loading || state.writing;
     byId('exportCsvButton').disabled = !canWrite || !state.rows.some(matches);
     byId('exportTsvButton').disabled = !canWrite || !state.rows.some(matches);
-    for (const button of byId('tableBody').querySelectorAll('button')) button.disabled = !canWrite;
+    for (const button of byId('tableBody').querySelectorAll('button')) button.disabled = state.writing || button.dataset.protected === 'true' || (button.dataset.readonly === 'true' ? !state.hasSnapshot : !canWrite);
+    byId('closeEmployeeDrawer').disabled = state.writing;
+    byId('editEmployeeDetails').disabled = !canWrite || !state.rows.some(row => row.EmployeeID === state.detailsId);
+    if (byId('refreshWorkspace')) byId('refreshWorkspace').disabled = state.loading || state.writing;
+    byId('clearSearchButton').hidden = !byId('searchInput').value;
     byId('employeeForm').setAttribute('aria-busy', String(state.writing));
     byId('directoryTableRegion').setAttribute('aria-busy', String(state.loading || state.writing));
-    byId('refreshButton').textContent = state.loading ? 'Refreshing…' : 'Refresh';
+    byId('refreshButton').querySelector('span').textContent = state.loading ? 'Refreshing…' : 'Refresh';
     byId('saveButton').textContent = state.writing ? 'Saving…' : state.editingId === null ? 'Add Employee' : 'Update Employee';
-    byId('clearFormButton').textContent = state.editingId === null ? 'Clear form' : 'Cancel editing';
-    byId('editHint').textContent = state.writing ? 'Waiting for server confirmation. Keep this page open.' : dirty() ? 'You have unsaved changes.' : 'Changes are saved only after the server confirms them.';
+    byId('clearFormButton').textContent = 'Cancel';
+    byId('editHint').textContent = state.writing ? 'Saving employee. Keep this panel open.' : dirty() ? 'You have unsaved changes.' : 'Fields marked * are required.';
   }
 
   function render() {
@@ -109,29 +129,47 @@
     body.replaceChildren();
     if (!filtered.length) {
       const row = document.createElement('tr');
-      const message = !state.hasSnapshot ? state.loading ? 'Loading employee records…' : 'The directory could not be loaded. Use Retry above.' : state.rows.length ? 'No employees match your search. Try another name or ID, or clear the search.' : 'No employees yet. Add your first employee using the form below.';
-      cell(row, message).colSpan = 8;
+      const message = !state.hasSnapshot ? state.loading ? 'Loading employee records…' : 'The directory could not be loaded. Use Retry above.' : state.rows.length ? 'No employees match your search. Try another name, email, or ID.' : 'Your directory is empty. Add your first employee to get started.';
+      const placeholder = cell(row, message);
+      placeholder.colSpan = 5;
+      placeholder.className = 'directory-placeholder';
       body.appendChild(row);
     }
     for (const employee of filtered.slice((state.page - 1) * pageSize, state.page * pageSize)) {
       const row = document.createElement('tr');
       row.dataset.employeeId = String(employee.EmployeeID);
-      [employee.EmployeeID, employee.EmployeeName, employee.Contact, employee.EmailID, employee.Address,
-        formatDateDisplay(employee.HireDate), formatDateDisplay(employee.DateOfBirth)].forEach(value => cell(row, value));
+      const person = document.createElement('div');
+      person.className = 'directory-person';
+      const avatar = document.createElement('span');
+      avatar.className = 'employee-avatar'; avatar.dataset.tone = String(employee.EmployeeID % 4); avatar.textContent = initials(employee.EmployeeName); avatar.setAttribute('aria-hidden', 'true');
+      const copy = document.createElement('div'); copy.className = 'directory-person-copy';
+      const name = document.createElement('button'); name.type = 'button'; name.className = 'employee-name'; name.textContent = employee.EmployeeName; name.title = employee.EmployeeName;
+      name.dataset.readonly = 'true'; name.setAttribute('aria-label', `View details for ${employee.EmployeeName}`); name.setAttribute('aria-haspopup', 'dialog'); name.setAttribute('aria-controls', 'employeeDrawer');
+      name.addEventListener('click', () => viewEmployee(employee.EmployeeID));
+      const email = document.createElement('span'); email.className = 'employee-email'; email.textContent = employee.EmailID || 'Email not provided'; email.title = email.textContent;
+      copy.append(name, email); person.append(avatar, copy); cell(row, '').appendChild(person);
+      const id = document.createElement('span'); id.className = 'employee-id'; id.textContent = employee.EmployeeID; cell(row, '').appendChild(id);
+      cell(row, employee.Contact || 'Not provided').className = 'directory-contact';
+      cell(row, formatDateDisplay(employee.HireDate)).className = 'directory-hire-date';
       const actions = cell(row, '');
-      for (const [label, className, action] of [['Edit', 'btn-edit', editEmployee], ['Delete', 'btn-delete', removeEmployee]]) {
+      const group = document.createElement('div'); group.className = 'row-actions';
+      for (const [label, className, iconName, action] of [['Edit', 'edit-action', 'edit', editEmployee], ['Delete', 'delete-action', 'trash', removeEmployee]]) {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = `btn-small ${className}`;
-        button.textContent = label;
+        button.className = `employee-action ${className}`;
+        button.append(icon(iconName), document.createTextNode(label));
         button.setAttribute('aria-label', `${label} ${employee.EmployeeName} (${employee.EmployeeID})`);
         button.addEventListener('click', () => action(employee.EmployeeID));
-        actions.appendChild(button);
+        if (label === 'Delete' && employee.EmployeeID === state.managerId) { button.dataset.protected = 'true'; button.title = 'Your manager account is protected from deletion.'; }
+        group.appendChild(button);
       }
+      actions.appendChild(group);
       body.appendChild(row);
     }
     byId('totalEmployeesStat').textContent = state.hasSnapshot ? state.rows.length : '—';
-    byId('pageNum').textContent = pages ? `Page ${state.page} of ${pages} · ${filtered.length} matching employees` : 'Page 0 of 0';
+    byId('pageNum').textContent = pages ? `Page ${state.page} of ${pages}` : 'Page 0 of 0';
+    const first = filtered.length ? (state.page - 1) * pageSize + 1 : 0;
+    byId('directoryRange').textContent = state.hasSnapshot ? `Showing ${first}–${Math.min(state.page * pageSize, filtered.length)} of ${filtered.length} employees${byId('searchInput').value.trim() ? ' matching your search' : ''}` : 'Waiting for employees';
     byId('prevPage').disabled = !pages || state.page <= 1;
     byId('nextPage').disabled = !pages || state.page >= pages;
     syncControls();
@@ -151,6 +189,95 @@
     byId(errorIds[field]).hidden = false;
   }
 
+  function openDrawer(mode) {
+    const account = byId('profilePanel');
+    if (account?.classList.contains('active') && typeof window.toggleCanvas === 'function') window.toggleCanvas();
+    if (!state.drawerOpen) {
+      state.returnFocus = document.activeElement;
+      const background = [byId('workspace') || byId('main-content'), byId('sidebar')].filter(Boolean);
+      state.inertElements = background.map(element => ({ element, inert: element.inert, attribute: element.hasAttribute('inert') }));
+      for (const { element } of state.inertElements) { element.inert = true; element.setAttribute('inert', ''); }
+    }
+    state.drawerOpen = true;
+    state.drawerMode = mode;
+    byId('employeeDrawer').hidden = false;
+    byId('employeeDrawer').setAttribute('aria-hidden', 'false');
+    byId('employeeDrawer').classList.add('active');
+    byId('employeeBackdrop').hidden = false;
+    byId('formSection').hidden = mode !== 'editor';
+    byId('employeeDetails').hidden = mode !== 'details';
+    byId('employeeDrawerCaption').textContent = mode === 'details' ? 'EMPLOYEE DIRECTORY' : state.editingId === null ? 'GROW YOUR TEAM' : 'EMPLOYEE DIRECTORY';
+    document.body.classList.add('directory-drawer-open');
+    syncControls();
+    (mode === 'editor' ? byId('empName') : byId('closeEmployeeDrawer')).focus();
+  }
+
+  function closeDrawer(force = false) {
+    if (!state.drawerOpen) return true;
+    if (!force && (state.writing || (state.drawerMode === 'editor' && !discardAllowed()))) {
+      if (state.writing) formStatus('Please wait for the current change to finish before closing this panel.', 'warning');
+      return false;
+    }
+    state.drawerOpen = false;
+    state.drawerMode = null;
+    state.detailsId = null;
+    byId('employeeDrawer').hidden = true;
+    byId('employeeDrawer').setAttribute('aria-hidden', 'true');
+    byId('employeeDrawer').classList.remove('active');
+    byId('employeeBackdrop').hidden = true;
+    document.body.classList.remove('directory-drawer-open');
+    for (const { element, inert, attribute } of state.inertElements) {
+      element.inert = inert;
+      if (!attribute) element.removeAttribute('inert');
+    }
+    state.inertElements = [];
+    resetForm();
+    if (location.hash === '#employeeForm') {
+      try { history.replaceState(null, '', location.pathname + location.search); } catch { /* Closing still works when history is unavailable. */ }
+    }
+    const opener = state.returnFocus;
+    state.returnFocus = null;
+    if (opener?.isConnected && !opener.disabled && !opener.closest('[hidden]')) opener.focus();
+    else (byId('addEmployeeButton').disabled ? byId('refreshButton') : byId('addEmployeeButton')).focus();
+    return true;
+  }
+
+  function updateDetails() {
+    const employee = state.rows.find(row => row.EmployeeID === state.detailsId);
+    const notice = byId('detailsStatus');
+    if (!employee) {
+      notice.textContent = 'This employee is no longer in the current directory. The details below are the last confirmed record.';
+      notice.hidden = false;
+      byId('editEmployeeDetails').disabled = true;
+      return;
+    }
+    byId('detailAvatar').textContent = initials(employee.EmployeeName);
+    byId('detailAvatar').dataset.tone = String(employee.EmployeeID % 4);
+    byId('detailName').textContent = employee.EmployeeName;
+    byId('detailEmail').textContent = employee.EmailID || 'Email not provided';
+    byId('detailEmployeeId').textContent = `ID ${employee.EmployeeID}`;
+    byId('detailContact').textContent = employee.Contact || 'Not provided';
+    byId('detailAddress').textContent = employee.Address || 'Not provided';
+    byId('detailDob').textContent = formatDateDisplay(employee.DateOfBirth);
+    byId('detailHireDate').textContent = formatDateDisplay(employee.HireDate);
+    byId('detailManager').textContent = employee.MgrID ?? 'Not assigned';
+    notice.textContent = ready() ? '' : 'Showing the last confirmed employee details. Refresh the directory to check for updates.';
+    notice.hidden = ready();
+  }
+
+  function viewEmployee(employeeId) {
+    if (!state.hasSnapshot || state.writing) return false;
+    if (state.drawerMode === 'editor' && !discardAllowed()) return false;
+    const employee = state.rows.find(row => row.EmployeeID === Number(employeeId));
+    if (!employee) return false;
+    resetForm();
+    state.detailsId = employee.EmployeeID;
+    byId('employeeDrawerTitle').textContent = 'Employee details';
+    updateDetails();
+    openDrawer('details');
+    return true;
+  }
+
   function discardAllowed() {
     if (state.writing) { formStatus('Wait for the current change to finish before leaving or clearing the form.', 'warning'); return false; }
     return !dirty() || confirm('Discard your unsaved employee changes?');
@@ -162,7 +289,8 @@
     state.editConflict = false;
     byId('employeeForm').reset();
     byId('empId').readOnly = false;
-    document.querySelector('.form-heading').textContent = 'Add New Employee';
+    document.querySelector('.form-heading').textContent = 'Add employee';
+    for (const option of byId('countryCode').querySelectorAll('[data-temporary]')) option.remove();
     clearErrors();
     formStatus();
     state.baseline = formValues();
@@ -177,12 +305,12 @@
   }
 
   function scrollToForm() {
-    byId('formSection').scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    if (!state.drawerOpen || state.drawerMode !== 'editor') openDrawer('editor');
   }
 
   function beginNewEmployee() {
     if (!ready() || state.writing || !clearForm()) return;
-    scrollToForm();
+    openDrawer('editor');
   }
 
   function populateForm(employee) {
@@ -199,9 +327,11 @@
     byId('mgrId').value = employee.MgrID ?? '';
     const contact = String(employee.Contact ?? '');
     const match = contact.match(/^(\+\d+)\s+(.+)$/);
-    const supported = [...byId('countryCode').options].some(option => option.value === match?.[1]);
-    byId('countryCode').value = supported ? match[1] : '+92';
-    byId('contactNo').value = supported ? match[2] : contact;
+    if (match && ![...byId('countryCode').options].some(option => option.value === match[1])) {
+      const option = document.createElement('option'); option.value = match[1]; option.textContent = match[1]; option.dataset.temporary = 'true'; byId('countryCode').appendChild(option);
+    }
+    byId('countryCode').value = match ? match[1] : '+92';
+    byId('contactNo').value = match ? match[2] : contact;
     document.querySelector('.form-heading').textContent = `Edit Employee ${employee.EmployeeID}`;
     clearErrors();
     formStatus();
@@ -214,7 +344,7 @@
     const employee = state.rows.find(row => row.EmployeeID === Number(employeeId));
     if (!employee) { status('That employee is no longer in this view. Refresh the directory.', 'warning', true); return false; }
     populateForm(employee);
-    scrollToForm();
+    openDrawer('editor');
     byId('empName').focus();
     return true;
   }
@@ -266,6 +396,8 @@
         state.loading = false;
         state.controller = null;
         render();
+        if (state.drawerMode === 'details') updateDetails();
+        if (ready() && state.hashPending) { state.hashPending = false; beginNewEmployee(); }
       }
     }
   }
@@ -318,6 +450,7 @@
     const editing = state.editingId !== null;
     invalidateRead();
     state.writing = true;
+    let saved = false;
     status(editing ? 'Saving the employee update. Please wait for confirmation…' : 'Adding the employee. Please wait for confirmation…');
     syncControls();
     try {
@@ -338,6 +471,7 @@
       if (index === -1) state.rows.push(confirmed); else state.rows[index] = confirmed;
       state.rows.sort((a, b) => a.EmployeeID - b.EmployeeID);
       resetForm();
+      saved = true;
       const hidden = !matches(confirmed);
       const message = `Employee ${editing ? 'updated' : 'added'} successfully.${hidden ? ' The active search hides this record; clear it to view the employee.' : ''}`;
       status(message, 'success');
@@ -351,6 +485,7 @@
     } finally {
       state.writing = false;
       render();
+      if (saved && state.drawerMode === 'editor') closeDrawer(true);
       if (byId('formStatus').dataset.kind === 'error') serverField(byId('formStatus').textContent);
     }
   }
@@ -359,10 +494,13 @@
     if (state.writing || !ready()) return false;
     const employee = state.rows.find(row => row.EmployeeID === Number(employeeId));
     if (!employee) return false;
+    if (employee.EmployeeID === state.managerId) { status('Your manager account is protected from deletion.', 'warning'); return false; }
     const unsaved = state.editingId === employee.EmployeeID && dirty() ? ' Unsaved edits to this employee will also be discarded after deletion succeeds.' : '';
     if (!confirm(`Delete ${employee.EmployeeName} (ID ${employee.EmployeeID}) and their payroll, shift, attendance, and performance records?${unsaved} This cannot be undone.`)) return false;
     invalidateRead();
     state.writing = true;
+    let deleted = false;
+    const closeAfterDelete = state.editingId === employee.EmployeeID || state.detailsId === employee.EmployeeID;
     status(`Deleting employee ${employee.EmployeeID}. Waiting for confirmation…`);
     syncControls();
     try {
@@ -376,6 +514,7 @@
       }
       state.rows = state.rows.filter(row => row.EmployeeID !== employee.EmployeeID);
       if (state.editingId === employee.EmployeeID) resetForm();
+      deleted = true;
       status(`Employee ${employee.EmployeeID} deleted successfully.`, 'success');
       showToast('Employee deleted successfully.', 'success');
       return true;
@@ -386,6 +525,7 @@
     } finally {
       state.writing = false;
       render();
+      if (deleted && closeAfterDelete) closeDrawer(true);
     }
   }
 
@@ -407,6 +547,7 @@
     const link = document.createElement('a');
     link.href = url; link.download = `employees.${extension}`;
     document.body.appendChild(link); link.click(); link.remove();
+    byId('exportMenu').open = false;
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     showToast(`Exported ${rows.length} matching employees as ${extension.toUpperCase()}.`, 'success');
   }
@@ -426,7 +567,23 @@
     });
     byId('employeeForm').addEventListener('change', syncControls);
     byId('retryDirectory').addEventListener('click', fetchEmployees);
+    byId('closeEmployeeDrawer').addEventListener('click', () => closeDrawer());
+    byId('employeeBackdrop').addEventListener('click', () => closeDrawer());
+    byId('editEmployeeDetails').addEventListener('click', () => editEmployee(state.detailsId));
+    document.addEventListener('keydown', event => {
+      if (state.drawerOpen && !byId('employeeDrawer').hidden) {
+        if (event.key === 'Escape') { event.preventDefault(); closeDrawer(); return; }
+        if (event.key !== 'Tab') return;
+        const controls = [...byId('employeeDrawer').querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]')].filter(element => !element.closest('[hidden]'));
+        const first = controls[0], last = controls[controls.length - 1];
+        if (!first) { event.preventDefault(); return; }
+        if (!byId('employeeDrawer').contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+        else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      } else if (event.key === 'Escape' && byId('exportMenu').open) { byId('exportMenu').open = false; byId('exportMenu').querySelector('summary').focus(); }
+    });
     document.addEventListener('click', event => {
+      if (!byId('exportMenu').contains(event.target)) byId('exportMenu').open = false;
       const anchor = event.target.closest?.('a[href]');
       if (!anchor || anchor.download || anchor.target === '_blank' || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
       const target = new URL(anchor.href, location.href);
@@ -437,11 +594,16 @@
       if (dirty() || state.writing) { event.preventDefault(); event.returnValue = ''; }
     });
     window.addEventListener('foodheaven:connection-restored', () => { if (!state.writing) fetchEmployees(); });
+    window.addEventListener('foodheaven:refresh', event => { if (!event.detail?.page || event.detail.page === 'employees') fetchEmployees(); });
+    if (window.FoodHeaven?.ready) {
+      Promise.resolve(window.FoodHeaven.ready).then(session => { state.managerId = Number(session.user?.MgrID) || null; render(); }).catch(() => {});
+    }
     fetchEmployees();
   }
 
   Object.assign(window, { fetchEmployees, refreshEmployeeData: fetchEmployees, saveEmployee, editEmployee, removeEmployee,
     searchEmployees, clearSearch, changePage, clearForm, beginNewEmployee, scrollToForm,
+    viewEmployee, closeEmployeeDrawer: () => closeDrawer(), cancelEmployeeEditing: () => closeDrawer(),
     exportToCSV: () => exportEmployees(','), exportToExcel: () => exportEmployees('\t') });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });
   else initialize();

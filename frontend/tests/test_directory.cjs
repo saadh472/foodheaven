@@ -27,6 +27,7 @@ async function page(t, fetch) {
 }
 
 function fill(window, overrides = {}) {
+  if (window.document.getElementById('employeeDrawer').hidden) window.beginNewEmployee();
   const values = { empId: '2001', empName: 'Fictional New Employee', countryCode: '+92', contactNo: '3001234567', email: 'new.employee@example.com',
     address: 'Fictional office', hireDate: '2025-01-01', dob: '1998-02-01', mgrId: '1001', ...overrides };
   for (const [id, value] of Object.entries(values)) {
@@ -210,7 +211,10 @@ test('refresh detects server changes to a dirty edit rather than silently overwr
 test('employee values remain text and exports neutralize spreadsheet formulas', async t => {
   const { window, document } = await page(t, async () => response([employee(1001, { EmployeeName: '=HYPERLINK("example")', Address: '<img src=x onerror=alert(1)>' })]));
   assert.equal(document.querySelector('#tableBody img'), null);
-  assert.match(document.getElementById('tableBody').textContent, /<img src=x/);
+  window.viewEmployee(1001);
+  assert.equal(document.querySelector('#employeeDetails img'), null);
+  assert.match(document.getElementById('detailAddress').textContent, /<img src=x/);
+  window.closeEmployeeDrawer();
   let exported;
   window.Blob = Blob;
   window.URL.createObjectURL = blob => { exported = blob; return 'blob:directory-export'; };
@@ -220,4 +224,71 @@ test('employee values remain text and exports neutralize spreadsheet formulas', 
   const content = await exported.text();
   assert.match(content, /"'=HYPERLINK\(""example""\)"/);
   assert.match(content, /"'\+92 3001234567"/);
+});
+
+test('compact rows expose complete read-only details and the editor restores focus after Escape', async t => {
+  const { window, document } = await page(t, async () => response([employee()]));
+  const name = document.querySelector('.employee-name');
+  name.focus();
+  name.click();
+  assert.equal(document.getElementById('employeeDrawer').hidden, false);
+  assert.equal(document.getElementById('employeeDetails').hidden, false);
+  assert.equal(document.getElementById('formSection').hidden, true);
+  assert.equal(document.getElementById('detailAddress').textContent, 'Fictional office');
+  assert.match(document.getElementById('detailDob').textContent, /1995/);
+  assert.equal(document.getElementById('detailManager').textContent, '1001');
+  assert.equal(document.getElementById('main-content').hasAttribute('inert'), true);
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  assert.equal(document.getElementById('employeeDrawer').hidden, true);
+  assert.equal(document.activeElement, name);
+  assert.equal(document.getElementById('main-content').hasAttribute('inert'), false);
+});
+
+test('unknown calling codes round-trip when only an employee name is edited', async t => {
+  let sent;
+  const original = employee(1001, { Contact: '+00 000000001' });
+  const { window, document } = await page(t, async (_url, options = {}) => {
+    if (options.method === 'PUT') { sent = JSON.parse(options.body); return response({ employee: { ...original, ...sent } }); }
+    return response([original]);
+  });
+  window.editEmployee(1001);
+  assert.equal(document.getElementById('countryCode').value, '+00');
+  document.getElementById('empName').value = 'Updated name';
+  document.getElementById('empName').dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert.equal(await window.saveEmployee(), true);
+  assert.equal(sent.Contact, original.Contact);
+  assert.equal(document.getElementById('employeeDrawer').hidden, true);
+});
+
+test('overview add hash waits for data and opens a clean employee editor', async t => {
+  const pending = deferred();
+  const dom = new JSDOM(html, { url: 'http://localhost/Sidebar/Sidebar_employeedetails.html#employeeForm', runScripts: 'outside-only', pretendToBeVisual: true });
+  t.after(() => dom.window.close());
+  dom.window.fetch = () => pending.promise;
+  dom.window.confirm = () => false;
+  if (dom.window.document.readyState === 'loading') await new Promise(resolve => dom.window.document.addEventListener('DOMContentLoaded', resolve, { once: true }));
+  dom.window.eval(script);
+  assert.equal(dom.window.document.getElementById('employeeDrawer').hidden, true);
+  pending.resolve(response([employee()]));
+  await flush();
+  assert.equal(dom.window.document.getElementById('employeeDrawer').hidden, false);
+  assert.equal(dom.window.document.getElementById('formSection').hidden, false);
+  assert.equal(dom.window.document.getElementById('empId').readOnly, false);
+  assert.equal(dom.window.document.activeElement.id, 'empName');
+});
+
+test('email search and missing-on-refresh details remain accurate without exposing hidden fields in the table', async t => {
+  let reads = 0;
+  const { window, document } = await page(t, async () => response(++reads === 1 ? [employee()] : []));
+  document.getElementById('searchInput').value = 'employee1001@example.com';
+  window.searchEmployees();
+  assert.equal(document.querySelectorAll('tbody tr[data-employee-id]').length, 1);
+  assert.equal(document.querySelector('tbody tr').children.length, 5);
+  window.viewEmployee(1001);
+  await window.fetchEmployees();
+  assert.equal(document.getElementById('employeeDetails').hidden, false);
+  assert.equal(document.getElementById('detailsStatus').hidden, false);
+  assert.match(document.getElementById('detailsStatus').textContent, /no longer in the current directory/);
+  assert.equal(document.getElementById('editEmployeeDetails').disabled, true);
+  assert.equal(document.querySelector('tbody td').colSpan, 5);
 });

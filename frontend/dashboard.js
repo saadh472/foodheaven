@@ -127,7 +127,7 @@
   byId('refreshOverview').addEventListener('click', loadDashboardStats);
   byId('signOutBtn').addEventListener('click', async event => {
     const button = event.currentTarget; if (button.disabled) return; button.disabled = true;
-    try { await FoodHeaven.logout(); } catch (error) { FoodHeaven.reportStatus?.(error.message, 'error'); }
+    try { await FoodHeaven.logout(); } catch (error) { FoodHeaven.reportStatus?.(error.message, { kind: error.uncertain ? 'warning' : 'error' }); }
     finally { button.disabled = false; }
   });
   async function loadProfile() {
