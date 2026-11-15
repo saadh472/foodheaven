@@ -18,3 +18,4 @@ ui/
 *.key
 .DS_Store
 Thumbs.db
+dist/

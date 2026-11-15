@@ -6,6 +6,12 @@ A full-stack employee management portal built with Flask and JavaScript. Manage 
 
 **Stack:** Python · Flask · SQLite · optional SQL Server · HTML, CSS, JavaScript
 
+[Try the public interactive demo](https://saadh472.github.io/foodheaven/) · [Screenshot walkthrough](docs/WALKTHROUGH.md) · [Security policy](SECURITY.md)
+
+![FoodHeaven team overview with fictional records](docs/screenshots/overview.jpg)
+
+The public preview runs the current interface with a browser-only API simulator and fictional records. Changes stay in this browser tab, and **Reset demo** restores the sample workspace. It does not host Flask or store shared employee records. Run the application locally below to use the real Flask API and persistent SQLite database. Use invented names, `example.com` email addresses, and `+00` phone numbers in the public preview.
+
 ## Features
 
 - **Employee management:** search, create, edit, and delete employee records with persistent database storage.
@@ -105,3 +111,23 @@ On macOS or Linux, use `.venv/bin/python`. GitHub Actions runs the checks on Win
 This is a university project improved for a reproducible local demonstration. It binds to loopback by default. Public hosting would require deployment configuration, HTTPS, account administration, and operational monitoring. Email-based password recovery is disabled until a verified reset-token flow is configured.
 
 The repository combines the original FoodHeaven UI and API work. The former component repositories retain their history; this repository is the home for continued development.
+
+## Public preview development
+
+Node.js 24 runs the isolated demo checks and builds the GitHub Pages artifact. The build copies interface assets and injects the demo adapter only into the generated `dist/` directory; it never changes the local Flask interface or copies database files.
+
+```sh
+npm ci --prefix frontend --ignore-scripts
+node --test demo/adapter.test.cjs demo/browser.test.cjs
+node scripts/build-demo.mjs
+node --test demo/build.test.cjs
+node scripts/preview-demo.mjs
+```
+
+Open `http://127.0.0.1:3200/foodheaven/`. The publication workflow validates the adapter before deploying the generated artifact. `dist/` is ignored by Git.
+
+## Security and reuse
+
+Dependency alerts, secret scanning, and code scanning are enabled for this public repository. See [SECURITY.md](SECURITY.md) to report a vulnerability privately. These checks complement review and do not establish production readiness.
+
+Original application code is available under the [MIT license](LICENSE). Existing dependency and legacy-asset attribution is documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); assets without established provenance are excluded from that grant.

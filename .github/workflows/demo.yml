@@ -1,0 +1,40 @@
+name: Publish fictional-data demo
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**', 'demo/**', 'scripts/build-demo.mjs', '.github/workflows/demo.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefix frontend --ignore-scripts
+      - run: node --test demo/adapter.test.cjs demo/browser.test.cjs
+      - run: node scripts/build-demo.mjs
+      - run: node --test demo/build.test.cjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
