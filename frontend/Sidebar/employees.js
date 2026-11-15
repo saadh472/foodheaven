@@ -200,6 +200,7 @@
     }
     state.drawerOpen = true;
     state.drawerMode = mode;
+    byId('employeeDrawer').inert = false; byId('employeeDrawer').toggleAttribute('inert', false);
     byId('employeeDrawer').hidden = false;
     byId('employeeDrawer').setAttribute('aria-hidden', 'false');
     byId('employeeDrawer').classList.add('active');
@@ -221,6 +222,7 @@
     state.drawerOpen = false;
     state.drawerMode = null;
     state.detailsId = null;
+    byId('employeeDrawer').inert = true; byId('employeeDrawer').toggleAttribute('inert', true);
     byId('employeeDrawer').hidden = true;
     byId('employeeDrawer').setAttribute('aria-hidden', 'true');
     byId('employeeDrawer').classList.remove('active');

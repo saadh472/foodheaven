@@ -117,6 +117,7 @@
   window.refreshDashboard = loadDashboardStats;
   window.toggleCanvas = () => {
     const panel = byId('profilePanel'); const opening = panel.hidden;
+    panel.inert = !opening; panel.toggleAttribute('inert', !opening);
     panel.hidden = !opening; panel.classList.toggle('active', opening); panel.setAttribute('aria-hidden', String(!opening));
     byId('accountBackdrop').hidden = !opening; byId('accountTrigger').setAttribute('aria-expanded', String(opening));
     byId('workspace').inert = opening; byId('sidebar').inert = opening;

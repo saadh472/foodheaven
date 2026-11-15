@@ -1,0 +1,104 @@
+/* Shared motion: short feedback, stable layouts, and no hover effects on touch. */
+:root {
+  --motion-fast: 140ms;
+  --motion-normal: 200ms;
+  --motion-panel: 240ms;
+  --motion-ease: cubic-bezier(.2, .8, .2, 1);
+}
+body.app-page :is(button, input[type="submit"], .primary-action, .secondary-action,
+  .workspace-menu a, .workspace-links a, .nav-links a, .account-links a,
+  .directory-export summary, a.tool-card) {
+  transition-property: background-color, color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--motion-ease);
+}
+body.app-page :is(input, select, textarea, .directory-search) {
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease,
+    background-color var(--motion-normal) ease, color var(--motion-normal) ease;
+}
+body.app-page :is(.directory-table, .team-preview) tbody tr {
+  transition: background-color var(--motion-fast) ease;
+}
+body.app-page :is(.directory-table, .team-preview) tbody tr:focus-within {
+  background-color: var(--brand-soft);
+}
+.directory-export .export-chevron {
+  transition: transform var(--motion-normal) var(--motion-ease);
+}
+.directory-export[open] .export-chevron { transform: rotate(180deg); }
+.directory-export[open] .export-options {
+  transform-origin: top right;
+  animation: menu-arrive 160ms var(--motion-ease) both;
+}
+@keyframes menu-arrive {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes panel-arrive {
+  from { opacity: .4; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes shade-arrive {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.account-drawer:not([hidden]), .employee-drawer:not([hidden]) {
+  animation: panel-arrive var(--motion-panel) var(--motion-ease) both;
+}
+.drawer-backdrop:not([hidden]), .employee-backdrop:not([hidden]) {
+  animation: shade-arrive 180ms ease both;
+}
+/* Hidden layers must never intercept input while finishing a visual exit. */
+:is(.account-drawer, .employee-drawer, .drawer-backdrop, .employee-backdrop)[hidden] {
+  pointer-events: none;
+}
+@supports (transition-behavior: allow-discrete) {
+  .account-drawer:not([hidden]) { animation: none; }
+  .account-drawer {
+    animation: none;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 180ms ease, transform var(--motion-panel) var(--motion-ease),
+      display var(--motion-panel) allow-discrete;
+  }
+  .account-drawer[hidden] { opacity: 0; transform: translateX(24px); }
+  @starting-style {
+    .account-drawer:not([hidden]) { opacity: 0; transform: translateX(24px); }
+  }
+}
+/* A modal handoff must not leave the higher account layer above the editor. */
+.directory-drawer-open .account-drawer[hidden],
+.directory-drawer-open .drawer-backdrop[hidden] { transition: none; animation: none; }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  body.app-page :is(.primary-action, .directory-button, .icon-button):hover:not(:disabled):not([aria-disabled="true"]) {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 9px rgb(16 55 58 / 10%);
+  }
+  body.app-page a.tool-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgb(16 55 58 / 8%);
+  }
+  body.app-page :is(.primary-action, .directory-button, .icon-button):active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+    transition-duration: 70ms;
+  }
+  body.app-page .workspace-menu a:hover:not([aria-current]) {
+    background-color: #24565a;
+    color: #fff;
+  }
+  body.directory-page .employee-action:hover:not(:disabled) {
+    box-shadow: 0 1px 4px rgb(16 55 58 / 7%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.app-page *, body.app-page *::before, body.app-page *::after {
+    transition-duration: 0s !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+  body.app-page :is(.primary-action, .directory-button, .icon-button, a.tool-card):hover {
+    transform: none !important;
+  }
+}

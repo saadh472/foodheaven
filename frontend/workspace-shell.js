@@ -110,6 +110,7 @@
       previousInert = { workspace: workspace.inert, sidebar: sidebar.inert };
       previousDrawerOpen = document.body.classList.contains('drawer-open');
     }
+    panel.inert = !opening; panel.toggleAttribute('inert', !opening);
     panel.hidden = !opening;
     panel.classList.toggle('active', opening);
     panel.setAttribute('aria-hidden', String(!opening));

@@ -28,6 +28,8 @@ Directory, payroll, and shift forms prevent duplicate writes and update their di
 
 The employee page reuses the overview's navigation, header, account panel, colors, and theme control through [workspace-shell.js](workspace-shell.js). [directory.css](directory.css) provides its compact table and editor layout. Address, birth date, and manager information remain available in employee details and editing.
 
+[motion.css](motion.css) provides short hover, focus, menu, and drawer transitions. Mouse-only lift effects avoid moving table rows or text controls. Reduced-motion preferences disable animation, and closed panels become inert immediately so visual transitions do not delay keyboard focus or allow accidental interaction.
+
 ## Verification
 
 From the repository root, run:
