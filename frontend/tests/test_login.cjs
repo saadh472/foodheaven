@@ -6,7 +6,6 @@ const { JSDOM, VirtualConsole } = require('jsdom');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'Portal_login', 'Portal Page.html'), 'utf8');
 const source = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 const nextTurn = () => new Promise(resolve => setImmediate(resolve));
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 const csrf = 'a'.repeat(43);
@@ -28,7 +27,7 @@ function page(t, respond, { blockedStorage = false } = {}) {
     return respond ? respond(request, posts) : json({ error: 'Invalid login ID or password.' }, 401);
   };
   window.eval(source);
-  inline.forEach(script => window.eval(script));
+  for (const script of window.document.querySelectorAll('script:not([src])')) window.eval(script.textContent);
   t.after(() => dom.window.close());
   const byId = id => window.document.getElementById(id);
   const submit = () => byId('loginForm').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));

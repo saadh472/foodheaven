@@ -27,8 +27,13 @@ async function setup(t, page, route) {
   const errors = [];
   const console = new VirtualConsole();
   console.on('jsdomError', error => errors.push(error.message));
-  const html = fs.readFileSync(path.join(root, 'Sidebar', page.html), 'utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
-  const dom = new JSDOM(html, {url:'http://localhost/Sidebar/' + page.html, runScripts:'dangerously', virtualConsole:console, pretendToBeVisual:true});
+  const html = fs.readFileSync(path.join(root, 'Sidebar', page.html), 'utf8');
+  // Keep the trusted fixture's inline button handlers, but load the app script only after installing test doubles.
+  const fixture = new JSDOM(html);
+  for (const script of fixture.window.document.querySelectorAll('script')) script.remove();
+  const markup = fixture.serialize();
+  fixture.window.close();
+  const dom = new JSDOM(markup, {url:'http://localhost/Sidebar/' + page.html, runScripts:'dangerously', virtualConsole:console, pretendToBeVisual:true});
   const {window} = dom;
   const calls = [];
   window.AbortController = AbortController;

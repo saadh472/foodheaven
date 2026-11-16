@@ -35,9 +35,10 @@ async function setup(t,options={}) {
     const asset=new URL(request.url);
     if (asset.origin!=='http://foodheaven.test') return new Response('',{headers:{'Content-Type':'text/css'}});
     const resolved=path.resolve(root,decodeURIComponent(asset.pathname).replace(/^\/+/,''));
-    if (!resolved.startsWith(root+path.sep) || !fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) return new Response('',{status:404});
+    if (!resolved.startsWith(root+path.sep)) return new Response('',{status:404});
     const type={'.css':'text/css','.js':'application/javascript','.svg':'image/svg+xml','.png':'image/png','.gif':'image/gif'}[path.extname(resolved).toLowerCase()]||'text/plain';
-    return new Response(fs.readFileSync(resolved),{headers:{'Content-Type':type}});
+    try { return new Response(fs.readFileSync(resolved),{headers:{'Content-Type':type}}); }
+    catch { return new Response('',{status:404}); }
   })]};
   const dom=new JSDOM(html,{
     url,runScripts:'dangerously',pretendToBeVisual:true,resources,virtualConsole,

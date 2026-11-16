@@ -20,7 +20,7 @@ async function page(t, relative, fetch, configure = () => {}) {
   configure(dom.window);
   if (dom.window.document.readyState === 'loading') await new Promise(resolve => dom.window.document.addEventListener('DOMContentLoaded', resolve, { once: true }));
   if (relative.includes('analytics')) dom.window.eval(fs.readFileSync(path.join(root, 'Sidebar/analytics.js'), 'utf8'));
-  else for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) if (!/\bsrc\s*=/.test(match[1])) dom.window.eval(match[2]);
+  else for (const script of dom.window.document.querySelectorAll('script:not([src])')) dom.window.eval(script.textContent);
   await flush();
   return { window: dom.window, document: dom.window.document };
 }

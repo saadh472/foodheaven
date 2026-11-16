@@ -38,11 +38,14 @@ async function setup(t, customRoute = () => undefined) {
   virtualConsole.on('jsdomError', error => {
     if (!error.message.includes('navigation')) errors.push(error.message);
   });
-  let html = fs.readFileSync(path.join(root,'interface.html'),'utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
-  html = html.replace(/<link\b[^>]*rel="stylesheet"[^>]*>/gi,'');
-  const styles = ['styles.css','dashboard.css'].map(file => '<style>' + fs.readFileSync(path.join(root,file),'utf8') + '</style>').join('');
-  html = html.replace('</head>', styles + '</head>');
-  const dom = new JSDOM(html, {url:'http://localhost/interface.html',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole});
+  const html = fs.readFileSync(path.join(root,'interface.html'),'utf8');
+  const dom = new JSDOM(html, {url:'http://localhost/interface.html',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole});
+  for (const element of dom.window.document.querySelectorAll('script, link[rel="stylesheet"]')) element.remove();
+  for (const file of ['styles.css','dashboard.css']) {
+    const style = dom.window.document.createElement('style');
+    style.textContent = fs.readFileSync(path.join(root,file),'utf8');
+    dom.window.document.head.appendChild(style);
+  }
   const {window} = dom;
   const calls = [];
   window.Request = Request;

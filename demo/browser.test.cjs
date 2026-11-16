@@ -18,8 +18,9 @@ function page(t, name, scripts) {
   const errors = [];
   const console = new VirtualConsole();
   console.on('jsdomError', error => { if (!error.message.includes('navigation')) errors.push(error.message); });
-  const html = read(name).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<link\b[^>]*rel="stylesheet"[^>]*>/gi, '');
-  const dom = new JSDOM(html, { url: 'https://portfolio.example/' + name, runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: console });
+  const dom = new JSDOM(read(name), { url: 'https://portfolio.example/' + name, runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: console });
+  // Fixtures are repository-owned markup. Execute only the explicitly selected scripts below.
+  for (const element of dom.window.document.querySelectorAll('script, link[rel="stylesheet"]')) element.remove();
   const win = dom.window;
   for (const key of ['Request', 'Response', 'Headers', 'AbortController']) win[key] = globalThis[key];
   win.confirm = () => true;

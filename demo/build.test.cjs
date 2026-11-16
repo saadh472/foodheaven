@@ -7,6 +7,36 @@ const { storageKey } = require('./adapter.js');
 const dist = path.resolve(__dirname, '../dist');
 const base = process.env.DEMO_BASE_PATH || '/foodheaven/';
 
+test('preview returns 404 before headers and stays available after a missing asset', async t => {
+  const { spawn } = require('node:child_process');
+  const child = spawn(process.execPath, [path.resolve(__dirname, '../scripts/preview-demo.mjs')], {
+    env: { ...process.env, DEMO_PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  t.after(() => child.kill());
+  const origin = await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(Error('Preview startup timed out')), 15000);
+    child.once('error', error => { clearTimeout(timeout); reject(error); });
+    child.once('exit', code => { clearTimeout(timeout); reject(Error('Preview exited during startup: ' + code)); });
+    let output = '';
+    child.stdout.on('data', chunk => {
+      output += chunk;
+      const match = output.match(/FoodHeaven demo: (http:\/\/127\.0\.0\.1:\d+)/);
+      if (match) { clearTimeout(timeout); resolve(match[1]); }
+    });
+  });
+  const missing = await fetch(origin + base + 'missing-preview-asset.js');
+  assert.equal(missing.status, 404);
+  assert.equal(await missing.text(), 'Not found');
+  const index = await fetch(origin + base);
+  assert.equal(index.status, 200);
+  assert.match(index.headers.get('Content-Type'), /text\/html/);
+  assert.match(await index.text(), /FoodHeaven/);
+  const head = await fetch(origin + base + 'styles.css', { method: 'HEAD' });
+  assert.equal(head.status, 200);
+  assert.equal(await head.text(), '');
+  assert.equal((await fetch(origin + '/outside-demo')).status, 404);
+});
+
 function asset(url) {
   const parsed = new URL(url, 'https://portfolio.example' + base);
   if (parsed.origin !== 'https://portfolio.example' || !parsed.pathname.startsWith(base)) return null;
@@ -42,10 +72,15 @@ test('generated anonymous login loads adapter then real API wrapper and signs in
   const localAssets = requestInterceptor(request => {
       const url = request.url;
       const file = asset(url);
-      if (!file || !fs.existsSync(file)) return new Response('Missing generated asset', { status: 404 });
-      loaded.push(new URL(url).pathname);
-      const contentType = file.endsWith('.js') ? 'application/javascript' : file.endsWith('.css') ? 'text/css' : 'application/octet-stream';
-      return new Response(fs.readFileSync(file), { headers: { 'Content-Type': contentType } });
+      if (!file) return new Response('Missing generated asset', { status: 404 });
+      try {
+        const content = fs.readFileSync(file);
+        const contentType = file.endsWith('.js') ? 'application/javascript' : file.endsWith('.css') ? 'text/css' : 'application/octet-stream';
+        loaded.push(new URL(url).pathname);
+        return new Response(content, { headers: { 'Content-Type': contentType } });
+      } catch {
+        return new Response('Missing generated asset', { status: 404 });
+      }
   });
   let nativeCalls = 0;
   const html = fs.readFileSync(path.join(dist, 'Portal_login/Portal Page.html'), 'utf8');
